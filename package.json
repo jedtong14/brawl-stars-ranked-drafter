@@ -1,0 +1,9 @@
+{
+  "name": "brawl-stars-ranked-drafter",
+  "private": true,
+  "description": "Brawl Stars ranked draft coach — static app in public/, deployed to Cloudflare Workers (free tier).",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy"
+  }
+}

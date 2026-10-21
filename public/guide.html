@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Coach — How to Use &amp; Draft Strategy Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        background: #0a0e1a;
+        color: #e2e8f0;
+        font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.55;
+        padding: 24px 16px 80px;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; }
+    h1, h2, h3, .font-brawl { font-family: "Lilita One", ui-sans-serif, system-ui; letter-spacing: .5px; }
+    h1 { font-size: 2rem; color: #fbbf24; text-align: center; margin-bottom: 4px; }
+    .sub { text-align: center; color: #94a3b8; margin-bottom: 28px; }
+    h2 { font-size: 1.4rem; color: #fbbf24; border-bottom: 2px solid #fbbf2455; padding-bottom: 6px; margin: 40px 0 14px; }
+    h3 { font-size: 1.08rem; color: #67e8f9; margin: 20px 0 8px; }
+    p { margin-bottom: 10px; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+    ol.steps { counter-reset: s; list-style: none; }
+    ol.steps li { counter-increment: s; position: relative; padding: 10px 0 10px 52px; border-bottom: 1px dashed #1f2937; }
+    ol.steps li:last-child { border-bottom: none; }
+    ol.steps li::before {
+        content: counter(s);
+        position: absolute; left: 0; top: 8px;
+        width: 34px; height: 34px; border-radius: 10px;
+        background: #fbbf24; color: #0a0e1a;
+        font-family: "Lilita One"; font-size: 1.1rem;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .kbd { background: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 1px 8px; font-size: .85rem; white-space: nowrap; color: #fbbf24; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1f2937; vertical-align: top; }
+    th { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: .75rem; letter-spacing: .08em; }
+    tr:last-child td { border-bottom: none; }
+    .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: .8rem; color: #0a0e1a; }
+    .rule { border-left: 4px solid #fbbf24; background: #11182766; padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 10px 0; }
+    .rule b { color: #fbbf24; }
+    .warn { border-left-color: #ef4444; }
+    .warn b { color: #ef4444; }
+    .good { border-left-color: #22c55e; }
+    .good b { color: #22c55e; }
+    ul { padding-left: 22px; }
+    .back { display: inline-block; color: #67e8f9; text-decoration: none; margin-bottom: 12px; font-weight: 700; }
+    code { color: #a3e635; font-size: .85em; }
+    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .badge-aggro { background: #ef4444; }
+    .badge-passive { background: #38bdf8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back" href="./">&#8592; Back to Draft Coach</a>
+    <h1>DRAFT COACH — GUIDE</h1>
+    <p class="sub">How to use the app + the full draft strategy (Bobby's draft guide, Parts 1 &amp; 2)</p>
+
+    <h2>&#127918; How to use the app (30 seconds)</h2>
+    <div class="card">
+        <ol class="steps">
+            <li><b>Pick the game mode &amp; map.</b> The header dropdowns set the meta: Brawl Ball / Gem Grab / Hot Zone / Heist are <span class="chip badge-aggro">AGGRESSIVE</span>, Knockout / Bounty are <span class="chip badge-passive">PASSIVE</span>. Every recommendation depends on this.</li>
+            <li><b>Set the coin flip.</b> Toggle who picks first in the draft: <span class="kbd">&#9876; Opponent picks first</span> (you're penalized on picks) or <span class="kbd">&#11088; We pick first</span> (you're favored). This changes the BAN GUIDE panel.</li>
+            <li><b>Set the pick slot.</b> Toggle <span class="kbd">Your pick 1</span> / <span class="kbd">Picks 2-3</span> / <span class="kbd">Picks 4-5</span> so the engine knows which rulebook to apply — first pick, pivot picks, and last-pick counter-picks all score differently.</li>
+            <li><b>Fill the pick slots.</b> Tap the <b>3 large slots per side</b> (yours and enemy's) to cycle through taken drafts; or just tap brawler cards in the grid to fill the active zone. Locked enemy picks instantly produce counter suggestions.</li>
+            <li><b>Read LOCK NOW.</b> The top panel ranks the best available picks with reasons (class need, meta bonus, counter/danger tags). Portraits are color-coded by draft class.</li>
+            <li><b>Follow the BAN GUIDE.</b> It lists ban priorities for the current coin flip and mode meta, with tags explaining why each brawler is a ban (first-pick threat, 2/3 pivot, last-pick cheese).</li>
+        </ol>
+    </div>
+    <div class="rule">&#128161; <b>Workflow in ranked:</b> ban phase &rarr; open BAN GUIDE (set coin flip) &rarr; first pick &rarr; set slot to 2-3 &rarr; watch enemy picks and re-check LOCK NOW &rarr; last pick &rarr; set slot to 4-5 and specifically counter the enemy composition.</div>
+
+    <h2>&#129514; The 7 draft classes (cheat sheet groups)</h2>
+    <p>Every brawler belongs to one group, left-to-right on the cheat sheet (this is the background color of every portrait in the app). Groups — not individual brawlers — drive the strategy:</p>
+    <div class="card">
+        <table>
+            <tr><th>Group</th><th>Color</th><th>Role &amp; when to pick</th></tr>
+            <tr><td><span class="chip" style="background:#fbbf24">THROWER (11)</span></td><td>Amber</td><td>Shots over walls. <b>Last pick only</b> when walls guarantee cover; dies to aggro.</td></tr>
+            <tr><td><span class="chip" style="background:#f87171">TANK (12)</span></td><td>Red</td><td>Fat HP pool, no gap closer. Beats low-damage comps; dies to throwers/snipers. Situational.</td></tr>
+            <tr><td><span class="chip" style="background:#22c55e">SPACE MAKER (21)</span></td><td>Green</td><td>Dash/teleport mobility. Takes 2 enemies to kill; splits focus. Ideal <b>turns 4-5</b>.</td></tr>
+            <tr><td><span class="chip" style="background:#e2e8f0">ANTI-TANK (26)</span></td><td>White</td><td>Burst in &lt;1s + stun/mute/knockback. <b>Best first pick</b> in aggressive modes.</td></tr>
+            <tr><td><span class="chip" style="background:#c084fc">SUPPORT (8)</span></td><td>Purple</td><td>Speed/heal/teleport utility — <b>not</b> the win condition; needs a damage partner.</td></tr>
+            <tr><td><span class="chip" style="background:#a3e635">SNIPER (11)</span></td><td>Lime</td><td>Pure range for passive modes. <b>Pure</b> snipers fear space makers; <b>UTILITY</b> snipers can flex. Avoid before last pick.</td></tr>
+            <tr><td><span class="chip" style="background:#67e8f9">CONTROL (19)</span></td><td>Cyan</td><td>No reliable stun, but holds space &amp; locks out mid-range. Good <b>2/3 pick</b>.</td></tr>
+        </table>
+        <p style="color:#94a3b8;font-size:.8rem;margin-top:.5rem">Counts include the <b>2026 new-era additions</b> (Bolt, Damian, Wendy, Nori, Starr Nova, Cosmo, Vince) that post-date Bobby's 101-brawler cheat sheet. Brawlers with Supercell <b>Buffie upgrades</b> show a &#129514; in the app and Matrix.</p>
+    </div>
+    <div class="rule warn"><b>Composition rule:</b> never draft a team of snipers + supports without space makers — the enemy dives into your backline for free. Every team needs (a) burst for tanks, (b) mobility or control to hold ground, (c) a real win condition.</div>
+
+    <h2>&#128295; Trait flags (icons on portraits)</h2>
+    <div class="card">
+        <table>
+            <tr><th>Flag</th><th>Meaning</th><th>Why it matters</th></tr>
+            <tr><td>&#11088; GOOD HYPER</td><td>Good hypercharge window</td><td>Meta power spike; bonus score in recommendations.</td></tr>
+            <tr><td>&#128074; KNOCKBACK/STUN</td><td>Knockback / stun</td><td>Shutdowns tanks &amp; divers — premium in aggro modes.</td></tr>
+            <tr><td>&#129513; WALL BREAK</td><td>Destroys cover</td><td>Exposes campers &amp; throwers; strong on His/BB.</td></tr>
+            <tr><td>&#10149; PIERCE DAMAGE</td><td>Damage through targets</td><td>Punishes grouped comps &amp; bears/hordes.</td></tr>
+            <tr><td>&#9881; SUPPORT</td><td>Unique mechanic (steal, mute, spawn...) &mdash; the "Special" column on the cheat sheet</td><td>Situational tech picks; often last-pick answers.</td></tr>
+        </table>
+    </div>
+
+    <h2>&#9876; Phase 1 — The coin flip decides everything</h2>
+    <div class="card">
+        <h3>If WE pick first (you won the flip)</h3>
+        <ul>
+            <li>You get the draft's strongest pick — take it, but you must also draft &ldquo;blind&rdquo; against everything.</li>
+            <li><b>First pick (slot 1):</b> in aggressive modes lock a <b>meta anti-tank</b> (e.g. Chester / Moe class picks). In passive modes (KO, Bounty) first pick is less punishing — range is fine.</li>
+            <li><b>Picks 2-3:</b> pivot picks — Control or Space Makers to structure the comp. Don't over-commit to a second sniper.</li>
+            <li><b>Picks 4-5:</b> this is where you are countered. Prefer flexible picks; a pure sniper early is a free loss.</li>
+        </ul>
+        <div class="rule good"><b>Never waste your first pick</b> on a one-trick counter pick — you're handing information away without pressure.</div>
+
+        <h3>If the OPPONENT picks first</h3>
+        <ul>
+            <li>You see their pick before every one of yours — counter-picking is your edge.</li>
+            <li><b>Slot 1:</b> still safe-bet: meta anti-tank in aggro. Don't hard-counter yet (they counter-back in 2-3).</li>
+            <li><b>Picks 4-5:</b> your reward — last picks are near-uncontested. Grab direct counters to their locked comp.</li>
+        </ul>
+    </div>
+
+    <h2>&#128683; Phase 2 — Bans (Part 2 rules)</h2>
+    <div class="card">
+        <h3>Opponent picks first</h3>
+        <div class="rule warn"><b>Ban:</b> the meta anti-tanks (aggro modes) or passive mainstays (KO/Bounty: utility snipers like Gus/Byron and Control like Lumi). Deny them the first-pick cheat they'd otherwise get.</div>
+        <h3>We pick first</h3>
+        <div class="rule warn"><b>NEVER ban meta anti-tanks!</b> If you ban them, you hand the opponent the best first pick for free. Instead ban: <b>2/3 pivots</b> (Control/Space Makers) and <b>last-pick cheese</b> (meta throwers like Sirius/Larry/Berry/Juju/Ziggy, and Shade) so their picks 4-5 can't hide behind walls.</div>
+        <div class="rule good"><b>Ban logic recap:</b> ban what THEY would pick, not what YOU fear fighting.</div>
+    </div>
+
+    <h2>&#9889; Aggressive vs Passive modes</h2>
+    <div class="card">
+        <div class="two-col">
+            <div>
+                <h3><span class="chip badge-aggro">AGGRESSIVE</span> modes</h3>
+                <p style="color:#94a3b8">Brawl Ball &bull; Gem Grab &bull; Hot Zone &bull; Heist</p>
+                <ul>
+                    <li>Objectives compress fights &rarr; burst/stun dominates.</li>
+                    <li><b>First pick: meta anti-tank.</b></li>
+                    <li>Space makers (Nita, Moe, Chester...) as pivots.</li>
+                    <li>Throwers risky mid-draft (they die to aggro divers).</li>
+                </ul>
+            </div>
+            <div>
+                <h3><span class="chip badge-passive">PASSIVE</span> modes</h3>
+                <p style="color:#94a3b8">Knockout &bull; Bounty</p>
+                <ul>
+                    <li>No respawn pressure &rarr; range wins map control.</li>
+                    <li>Utility snipers (Gus, Byron) &amp; Control shine.</li>
+                    <li><b>Pure snipers (Piper, Brock...) as last pick</b> — diving threat gets stronger as the round progresses.</li>
+                    <li>Supports viable: Glowy/Kit heal/sustain out-values duels.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <h2>&#129309; Phase 3 — Counter-picking inside the draft</h2>
+    <div class="card">
+        <ul>
+            <li><b>Hard counter &rarr; strong pick:</b> locking an enemy's counter is worth a big score bump; being countered by an enemy pick raises the warning.</li>
+            <li><b>Matchup memories:</b> throwers die to mobility/dives; pure snipers lose to space makers; tanks die to throwers/snipers at range but feast on low-damage comps.</li>
+            <li><b>Mode-specific traps:</b> e.g. Chuck is a Heist monster (mode-keyed counter) even when weak elsewhere.</li>
+            <li><b>Support rule:</b> a Support (Gus, Poco, Kit...) must always pair with an independent damage pick — never as first pick of passive comps expecting to carry.</li>
+            <li><b>Current-meta bonus:</b> Part 2's per-class top-5 meta picks get an extra score bonus — trust them when two options feel equal.</li>
+        </ul>
+    </div>
+
+    <h2>&#9997; Last-pick cheat sheet (slot 4-5)</h2>
+    <div class="card">
+        <table>
+            <tr><th>Enemy locked...</th><th>You look for</th></tr>
+            <tr><td>3 tanks / HP-stacking</td><td>Pierce + wall-break + KB anti-tanks</td></tr>
+            <tr><td>Throwers behind walls</td><td>Space makers / wall-break aggro</td></tr>
+            <tr><td>Pure snipers</td><td>Space makers &amp; divers</td></tr>
+            <tr><td>Support-heavy sustain</td><td>Burst anti-tank + mute/special tech</td></tr>
+        </table>
+    </div>
+
+    <h2>&#9989; Golden rules (TL;DR)</h2>
+    <div class="card">
+        <ul>
+            <li>Draft <b>classes</b>, not counters to one brawler.</li>
+            <li>Won the flip: get value; lost the flip: get information.</li>
+            <li>Never ban meta anti-tanks when you pick first.</li>
+            <li>Ban cheese (throwers, Shade) when you pick first.</li>
+            <li>Pure snipers only when mobility threat is gone.</li>
+            <li>Support is a spice, never the meal.</li>
+            <li>Aggro mode &rarr; anti-tank first pick, every time.</li>
+        </ul>
+    </div>
+
+    <p class="sub" style="margin-top:36px">Looking for every brawler's flags, modes &amp; matchups? See the <a class="here" href="./matrix.html">Draft Matrix &rarr;</a> &bull; Want what changed from each source video? See the <a class="here" href="./strategy-diff.html">Strategy Diff Report &rarr;</a><br>Strategy from Bobby's ranked draft guide (Parts 1 &amp; 2, SnakeThug quiz) &bull; asset icons via Brawlify CDN</p>
+</div>
+</body>
+</html>

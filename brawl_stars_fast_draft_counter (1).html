@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>10s Brawl Stars Counter Assistant</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Lilita One & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        brawl: ['"Lilita One"', 'cursive', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        rareGreen: '#22c55e',
+                        superRareBlue: '#06b6d4',
+                        epicPurple: '#a855f7',
+                        mythicRed: '#ef4444',
+                        legendaryGold: '#eab308',
+                        bsDark: '#090d16',
+                        bsCard: '#131b2e'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #080c14;
+            color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .brawl-stroke {
+            text-shadow: 2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+        }
+
+        /* Hide scrollbars for smooth mobile touch sliding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Touch Button Active States */
+        .touch-btn {
+            transition: transform 0.08s ease, filter 0.08s ease;
+        }
+        .touch-btn:active {
+            transform: scale(0.94);
+            filter: brightness(1.2);
+        }
+
+        /* Pulsing Recommendation Highlights */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.8); }
+        }
+        .glow-counter {
+            animation: pulse-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="pb-10 max-w-md mx-auto min-h-screen flex flex-col border-x border-slate-800/50 shadow-2xl">
+
+    <!-- STICKY TOP DRAFT BAR (Mode & Map) -->
+    <header class="sticky top-0 z-50 bg-slate-900/95 border-b border-slate-800 backdrop-blur-md px-3 py-2.5 shadow-xl">
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-1.5">
+                <span class="w-6 h-6 bg-amber-400 text-slate-950 rounded-lg flex items-center justify-center font-brawl text-xs shadow">
+                    <i class="fa-solid fa-bolt"></i>
+                </span>
+                <h1 class="font-brawl text-lg text-amber-400 tracking-wide brawl-stroke">10S COUNTER</h1>
+            </div>
+            
+            <button onclick="resetAllPicks()" class="touch-btn text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1 uppercase tracking-wider">
+                <i class="fa-solid fa-rotate-right text-amber-400"></i> Reset
+            </button>
+        </div>
+
+        <!-- Mode & Map Quick Selectors -->
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <select id="modeSelect" onchange="onModeChange()" class="w-full bg-slate-950 border border-slate-700 text-xs text-amber-300 font-bold py-1.5 px-2 rounded-xl focus:outline-none focus:border-amber-400">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+            <div>
+                <select id="mapSelect" onchange="onMapChange()" class="w-full bg-slate-950 border border-slate-700 text-xs text-slate-200 font-semibold py-1.5 px-2 rounded-xl focus:outline-none focus:border-amber-400">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 px-3 pt-3 space-y-3">
+
+        <!-- ENEMY TEAM SLOTS SECTION -->
+        <section class="bg-slate-900/90 border border-red-500/30 rounded-2xl p-2.5 shadow-lg">
+            <div class="flex justify-between items-center mb-2 px-1">
+                <span class="font-brawl text-red-400 text-xs tracking-wider flex items-center gap-1.5 brawl-stroke">
+                    <i class="fa-solid fa-crosshairs text-red-500"></i> ENEMY LOCKED IN
+                </span>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Tap Slot & Pick Below</span>
+            </div>
+
+            <!-- 3 Enemy Slots -->
+            <div class="grid grid-cols-3 gap-2" id="enemySlotsContainer">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+        <!-- TOP RECOMMENDATIONS PANEL (Immediate Hard Counters) -->
+        <section class="bg-slate-900/95 border-2 border-amber-400/80 rounded-2xl p-3 shadow-xl relative overflow-hidden">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-amber-400 text-sm"></i>
+                    <h2 class="font-brawl text-amber-400 text-sm tracking-wide brawl-stroke">TOP HARD COUNTERS</h2>
+                </div>
+                <span class="text-[9px] font-bold bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full uppercase border border-amber-400/30">Immediate Pick</span>
+            </div>
+
+            <!-- Direct Counters List -->
+            <div id="recommendationsList" class="space-y-1.5">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+        <!-- BRAWLER SELECTION GRID BY RARITY -->
+        <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shadow-lg space-y-2.5">
+            
+            <!-- Quick Search Bar -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input type="text" id="brawlerSearch" placeholder="Search (e.g., Otis, Frank, Piper)..." 
+                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400">
+            </div>
+
+            <!-- Rarity Tabs -->
+            <div class="flex gap-1 overflow-x-auto no-scrollbar pb-0.5 text-[10px] font-bold" id="rarityTabs">
+                <button onclick="setRarityFilter('ALL')" class="rarity-tab active touch-btn bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg whitespace-nowrap">ALL</button>
+                <button onclick="setRarityFilter('RARE')" class="rarity-tab touch-btn bg-slate-800 text-rareGreen px-2.5 py-1 rounded-lg whitespace-nowrap">RARE</button>
+                <button onclick="setRarityFilter('SUPER RARE')" class="rarity-tab touch-btn bg-slate-800 text-superRareBlue px-2.5 py-1 rounded-lg whitespace-nowrap">SUPER RARE</button>
+                <button onclick="setRarityFilter('EPIC')" class="rarity-tab touch-btn bg-slate-800 text-epicPurple px-2.5 py-1 rounded-lg whitespace-nowrap">EPIC</button>
+                <button onclick="setRarityFilter('MYTHIC')" class="rarity-tab touch-btn bg-slate-800 text-mythicRed px-2.5 py-1 rounded-lg whitespace-nowrap">MYTHIC</button>
+                <button onclick="setRarityFilter('LEGENDARY')" class="rarity-tab touch-btn bg-slate-800 text-legendaryGold px-2.5 py-1 rounded-lg whitespace-nowrap">LEGENDARY</button>
+            </div>
+
+            <!-- Brawlers Container Grouped by Rarity -->
+            <div id="brawlersGrid" class="space-y-3 max-h-[360px] overflow-y-auto pr-0.5 no-scrollbar">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JS Logic -->
+    <script>
+        // RARITY DATA & BRAWLER ROSTER
+        const RARITIES = {
+            'RARE': { name: 'RARE', color: 'text-rareGreen', bg: 'bg-rareGreen/20', border: 'border-rareGreen/60', badgeBg: 'bg-rareGreen' },
+            'SUPER RARE': { name: 'SUPER RARE', color: 'text-superRareBlue', bg: 'bg-superRareBlue/20', border: 'border-superRareBlue/60', badgeBg: 'bg-superRareBlue' },
+            'EPIC': { name: 'EPIC', color: 'text-epicPurple', bg: 'bg-epicPurple/20', border: 'border-epicPurple/60', badgeBg: 'bg-epicPurple' },
+            'MYTHIC': { name: 'MYTHIC', color: 'text-mythicRed', bg: 'bg-mythicRed/20', border: 'border-mythicRed/60', badgeBg: 'bg-mythicRed' },
+            'LEGENDARY': { name: 'LEGENDARY', color: 'text-legendaryGold', bg: 'bg-legendaryGold/20', border: 'border-legendaryGold/60', badgeBg: 'bg-legendaryGold' }
+        };
+
+        const GAMEMODES = [
+            { id: 'bb', name: '⚽ Brawl Ball', maps: ['Backyard Bowl', 'Sneaky Fields', 'Super Beach'] },
+            { id: 'gg', name: '💎 Gem Grab', maps: ['Last Stop', 'Hard Rock Mine'] },
+            { id: 'ko', name: '💀 Knockout', maps: ['Shooting Star', 'Goldarm Gulch'] },
+            { id: 'heist', name: '💰 Heist', maps: ['Safe Zone', 'Hot Potato'] },
+            { id: 'hz', name: '🔥 Hot Zone', maps: ['Dueling Beetles', 'Ring of Fire'] },
+            { id: 'bounty', name: '⭐ Bounty', maps: ['Hideout', 'Layer Cake'] }
+        ];
+
+        const BRAWLERS = [
+            // RARE
+            { id: 'shelly', name: 'Shelly', rarity: 'RARE', counters: { 'mortis': 'Instant Super blast', 'edgar': 'Super cancels landing', 'frank': 'Super stuns & cancels' } },
+            { id: 'nita', name: 'Nita', rarity: 'RARE', counters: { 'bull': 'Bear tanks shotgun', 'el_primo': 'Bear zones melee' } },
+            { id: 'colt', name: 'Colt', rarity: 'RARE', counters: { 'frank': 'Melts huge HP bar', '8bit': 'Out-maneuvers slow speed' } },
+            { id: 'bull', name: 'Bull', rarity: 'RARE', counters: { 'edgar': 'Out-damages jump', 'mortis': '2 shotgun bursts kill' } },
+            { id: 'el_primo', name: 'El Primo', rarity: 'RARE', counters: { 'bull': 'Suplex gadget cancel', 'frank': 'Cancels Super with jump' } },
+            { id: 'barley', name: 'Barley', rarity: 'RARE', counters: { 'shelly': 'Keeps away with pools', 'jacky': 'Safe behind walls' } },
+            { id: 'poco', name: 'Poco', rarity: 'RARE', counters: { 'crow': 'Heals off poison tick', 'gene': 'Screaming solo gadget clears CC' } },
+            { id: 'rosa', name: 'Rosa', rarity: 'RARE', counters: { 'mortis': 'Shield negates dashes', 'edgar': 'Shield absorbs burst' } },
+
+            // SUPER RARE
+            { id: 'jessie', name: 'Jessie', rarity: 'SUPER RARE', counters: { 'nita': 'Bounce shots off Bear', 'poko': 'Turret out-damages heals' } },
+            { id: 'dynamike', name: 'Dynamike', rarity: 'SUPER RARE', counters: { 'frank': 'Stun gadget behind walls', 'otis': 'Safe lob over walls' } },
+            { id: 'rico', name: 'Rico', rarity: 'SUPER RARE', counters: { 'bull': 'Bounces shots in lanes', 'el_primo': 'Melts in tight walls' } },
+            { id: 'penny', name: 'Penny', rarity: 'SUPER RARE', counters: { 'nita': 'Salty barrel splash', 'ash': 'Mortar destroys rats' } },
+            { id: 'carl', name: 'Carl', rarity: 'SUPER RARE', counters: { 'piper': 'Super dives snipers', 'brock': 'Survives rockets' } },
+            { id: 'jacky', name: 'Jacky', rarity: 'SUPER RARE', counters: { 'mortis': 'Counter crush damages dash', 'edgar': 'Pulls & melts close-up' } },
+            { id: 'gus', name: 'Gus', rarity: 'SUPER RARE', counters: { 'mortis': 'Knockback shield gadget', 'edgar': 'Shield absorbs jump' } },
+
+            // EPIC
+            { id: 'bo', name: 'Bo', rarity: 'EPIC', counters: { 'edgar': 'Mine knockback cancels jump', 'mortis': 'Mines block dashes' } },
+            { id: 'emz', name: 'Emz', rarity: 'EPIC', counters: { 'frank': 'Friendzone knockback', 'el_primo': 'Keeps tanks at range', 'draco': 'Friendzone pushes away' } },
+            { id: 'stu', name: 'Stu', rarity: 'EPIC', counters: { 'frank': 'Endless knockback dashes', 'bull': 'Kites endlessly' } },
+            { id: 'piper', name: 'Piper', rarity: 'EPIC', counters: { 'frank': 'Outranges & Auto-aimer knockback', 'shelly': 'Far outranges' } },
+            { id: 'pam', name: 'Pam', rarity: 'EPIC', counters: { 'mortis': 'Scrapturret sucks ammo', 'edgar': 'Knockback gadget' } },
+            { id: 'frank', name: 'Frank', rarity: 'EPIC', counters: { 'poco': 'Overpowers low DPS', 'byron': 'Traverses poison' } },
+            { id: 'bibi', name: 'Bibi', rarity: 'EPIC', counters: { 'frank': 'Home Run knockback cancels Super', 'edgar': 'Knocks away jump' } },
+            { id: 'bea', name: 'Bea', rarity: 'EPIC', counters: { 'frank': 'Charged honey shot shreds', 'meg': 'Slows & melts mech' } },
+            { id: 'nani', name: 'Nani', rarity: 'EPIC', counters: { 'piper': 'Return-to-sender reflects shot', 'angelo': 'Return-to-sender reflects shot' } },
+            { id: 'edgar', name: 'Edgar', rarity: 'EPIC', counters: { 'dynamike': 'Direct jump kill', 'barley': 'Direct jump kill', 'sprout': 'Jumps over walls' } },
+            { id: 'griff', name: 'Griff', rarity: 'EPIC', counters: { 'frank': 'Melts huge HP with Super', 'el_primo': 'Point blank cards obliterate' } },
+            { id: 'gale', name: 'Gale', rarity: 'EPIC', counters: { 'mortis': 'Twister gadget blocks dash', 'edgar': 'Super pushes away', 'frank': 'Stuns against walls', 'el_primo': 'Hard stops jump' } },
+            { id: 'colette', name: 'Colette', rarity: 'EPIC', counters: { 'frank': '% HP damage shreds HP', 'meg': 'Melts mech in 2 shots', 'draco': 'Melts dragon form', 'el_primo': '% HP damage' } },
+            { id: 'belle', name: 'Belle', rarity: 'EPIC', counters: { 'frank': 'Spotlight mark increases dmg', 'draco': 'Spotlight mark neutralizes HP' } },
+            { id: 'angelo', name: 'Angelo', rarity: 'EPIC', counters: { 'colette': 'Outranges from water', 'frank': 'Snipes safely across water' } },
+
+            // MYTHIC
+            { id: 'mortis', name: 'Mortis', rarity: 'MYTHIC', counters: { 'dynamike': 'Dashes through explosives', 'barley': 'Dives safely', 'piper': 'Dashes under snipes', 'sprout': 'Bypasses walls' } },
+            { id: 'tara', name: 'Tara', rarity: 'MYTHIC', counters: { 'mortis': 'Shadows block dashes', 'edgar': 'Super pulls & melts' } },
+            { id: 'gene', name: 'Gene', rarity: 'MYTHIC', counters: { 'piper': 'Pulls squishy snipers', 'crow': 'Knockback gadget cancels dive' } },
+            { id: 'max', name: 'Max', rarity: 'MYTHIC', counters: { 'frank': 'Out-speed Super windup', 'dynamike': 'Dodges bombs easily' } },
+            { id: 'sprout', name: 'Sprout', rarity: 'MYTHIC', counters: { 'piper': 'Blocks line of sight with wall' } },
+            { id: 'byron', name: 'Byron', rarity: 'MYTHIC', counters: { 'crow': 'Malignant potion stops heal' } },
+            { id: 'otis', name: 'Otis', rarity: 'MYTHIC', counters: { 'frank': 'Mutes Super windup', 'draco': 'Mutes Dragon form', 'edgar': 'Mutes jump landing', 'mortis': 'Mutes dash attack' } },
+            { id: 'mico', name: 'Mico', rarity: 'MYTHIC', counters: { 'dynamike': 'Invulnerable jump over bombs', 'barley': 'Jumps over puddles', 'piper': 'Direct dive on snipers' } },
+            { id: 'chuck', name: 'Chuck', rarity: 'MYTHIC', counters: { 'heist': 'Dash loops melt heist safe' } },
+
+            // LEGENDARY
+            { id: 'spike', name: 'Spike', rarity: 'LEGENDARY', counters: { 'frank': 'Life plant blocks & melts', 'bull': 'Curveball kites tanks' } },
+            { id: 'crow', name: 'Crow', rarity: 'LEGENDARY', counters: { 'poco': 'Poison stops healing', 'byron': 'Poison reduces healing' } },
+            { id: 'leon', name: 'Leon', rarity: 'LEGENDARY', counters: { 'piper': 'Invisibility sneaks up', 'angelo': 'Invisibility catches charging shot' } },
+            { id: 'sandy', name: 'Sandy', rarity: 'LEGENDARY', counters: { 'piper': 'Sandstorm covers team gap' } },
+            { id: 'amber', name: 'Amber', rarity: 'LEGENDARY', counters: { 'frank': 'Continuous fire melts HP', 'edgar': 'Fire dancing gadget' } },
+            { id: 'meg', name: 'Meg', rarity: 'LEGENDARY', counters: { 'mortis': 'Mech HP absorbs dashes', 'edgar': 'Mech out-sustains' } },
+            { id: 'cordelius', name: 'Cordelius', rarity: 'LEGENDARY', counters: { 'frank': 'Shadow realm mutes Super', 'draco': 'Shadow realm steals dragon form' } },
+            { id: 'kit', name: 'Kit', rarity: 'LEGENDARY', counters: { 'piper': 'Invisible jump locks sniper' } },
+            { id: 'draco', name: 'Draco', rarity: 'LEGENDARY', counters: { 'mortis': 'Dragon form overpowers', 'edgar': 'Dragon form survives burst' } }
+        ];
+
+        // APP STATE
+        let state = {
+            mode: 'bb',
+            map: 'Backyard Bowl',
+            selectedSlot: 0,
+            enemyPicks: [null, null, null],
+            rarityFilter: 'ALL',
+            searchQuery: ''
+        };
+
+        // INITIALIZATION
+        window.onload = function() {
+            renderModeSelect();
+            renderMapSelect();
+            renderEnemySlots();
+            renderBrawlers();
+            updateRecommendations();
+
+            document.getElementById('brawlerSearch').addEventListener('input', (e) => {
+                state.searchQuery = e.target.value.toLowerCase();
+                renderBrawlers();
+            });
+        };
+
+        function renderModeSelect() {
+            const select = document.getElementById('modeSelect');
+            select.innerHTML = GAMEMODES.map(m => `
+                <option value="${m.id}" ${state.mode === m.id ? 'selected' : ''}>${m.name}</option>
+            `).join('');
+        }
+
+        function renderMapSelect() {
+            const select = document.getElementById('mapSelect');
+            const currentMode = GAMEMODES.find(m => m.id === state.mode);
+            select.innerHTML = currentMode.maps.map(m => `
+                <option value="${m}" ${state.map === m ? 'selected' : ''}>${m}</option>
+            `).join('');
+        }
+
+        function onModeChange() {
+            state.mode = document.getElementById('modeSelect').value;
+            const currentMode = GAMEMODES.find(m => m.id === state.mode);
+            state.map = currentMode.maps[0];
+            renderMapSelect();
+            updateRecommendations();
+        }
+
+        function onMapChange() {
+            state.map = document.getElementById('mapSelect').value;
+            updateRecommendations();
+        }
+
+        function renderEnemySlots() {
+            const container = document.getElementById('enemySlotsContainer');
+            container.innerHTML = state.enemyPicks.map((pickId, idx) => {
+                const brawler = BRAWLERS.find(b => b.id === pickId);
+                const isSelected = state.selectedSlot === idx;
+                
+                if (brawler) {
+                    const rarityInfo = RARITIES[brawler.rarity];
+                    return `
+                        <button onclick="selectSlot(${idx})" 
+                                class="touch-btn relative p-2 rounded-xl bg-slate-950 border-2 ${isSelected ? 'border-amber-400' : rarityInfo.border} flex flex-col items-center justify-center shadow">
+                            <div class="w-8 h-8 rounded-lg ${rarityInfo.badgeBg} text-slate-950 font-brawl flex items-center justify-center text-xs shadow">
+                                ${brawler.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-100 truncate w-full mt-1 text-center">${brawler.name}</span>
+                            <span onclick="event.stopPropagation(); clearSlot(${idx})" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shadow">
+                                ×
+                            </span>
+                        </button>
+                    `;
+                } else {
+                    return `
+                        <button onclick="selectSlot(${idx})" 
+                                class="touch-btn p-2 rounded-xl bg-slate-950/50 border-2 ${isSelected ? 'border-amber-400 bg-amber-400/10' : 'border-slate-800 border-dashed'} flex flex-col items-center justify-center text-slate-500">
+                            <span class="text-[10px] font-bold uppercase">Enemy ${idx + 1}</span>
+                            <span class="text-[9px] opacity-60">${isSelected ? 'SELECT BELOW' : 'TAP TO SET'}</span>
+                        </button>
+                    `;
+                }
+            }).join('');
+        }
+
+        function selectSlot(idx) {
+            state.selectedSlot = idx;
+            renderEnemySlots();
+        }
+
+        function clearSlot(idx) {
+            state.enemyPicks[idx] = null;
+            renderEnemySlots();
+            renderBrawlers();
+            updateRecommendations();
+        }
+
+        function resetAllPicks() {
+            state.enemyPicks = [null, null, null];
+            state.selectedSlot = 0;
+            renderEnemySlots();
+            renderBrawlers();
+            updateRecommendations();
+        }
+
+        function setRarityFilter(rarity) {
+            state.rarityFilter = rarity;
+            document.querySelectorAll('#rarityTabs .rarity-tab').forEach(btn => {
+                btn.classList.remove('active', 'bg-amber-400', 'text-slate-950');
+                btn.classList.add('bg-slate-800');
+            });
+            event.target.classList.remove('bg-slate-800');
+            event.target.classList.add('active', 'bg-amber-400', 'text-slate-950');
+            renderBrawlers();
+        }
+
+        function renderBrawlers() {
+            const container = document.getElementById('brawlersGrid');
+            const takenIds = state.enemyPicks.filter(Boolean);
+
+            const filtered = BRAWLERS.filter(b => {
+                const matchesRarity = state.rarityFilter === 'ALL' || b.rarity === state.rarityFilter;
+                const matchesSearch = b.name.toLowerCase().includes(state.searchQuery);
+                return matchesRarity && matchesSearch;
+            });
+
+            // Group filtered brawlers by rarity
+            const rarityOrder = ['RARE', 'SUPER RARE', 'EPIC', 'MYTHIC', 'LEGENDARY'];
+            let html = '';
+
+            rarityOrder.forEach(rarityKey => {
+                const group = filtered.filter(b => b.rarity === rarityKey);
+                if (group.length === 0) return;
+
+                const rarityMeta = RARITIES[rarityKey];
+
+                html += `
+                    <div>
+                        <div class="text-[10px] font-brawl tracking-wider uppercase ${rarityMeta.color} mb-1 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full ${rarityMeta.badgeBg}"></span>
+                            ${rarityMeta.name} (${group.length})
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            ${group.map(b => {
+                                const isTaken = takenIds.includes(b.id);
+                                return `
+                                    <button onclick="pickBrawler('${b.id}')" 
+                                            ${isTaken ? 'disabled' : ''}
+                                            class="touch-btn p-1.5 rounded-xl bg-slate-950 border ${rarityMeta.border} flex flex-col items-center justify-center relative ${isTaken ? 'opacity-25' : 'hover:scale-105 active:scale-95'}">
+                                        
+                                        <div class="w-7 h-7 rounded-lg ${rarityMeta.badgeBg} text-slate-950 font-brawl flex items-center justify-center text-xs shadow">
+                                            ${b.name.substring(0, 2).toUpperCase()}
+                                        </div>
+                                        <span class="text-[10px] font-bold text-slate-200 truncate w-full text-center mt-1">${b.name}</span>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || `<div class="text-xs text-slate-500 text-center py-4">No brawlers found matching query</div>`;
+        }
+
+        function pickBrawler(brawlerId) {
+            state.enemyPicks[state.selectedSlot] = brawlerId;
+            // Advance to next empty slot automatically
+            const nextEmpty = state.enemyPicks.findIndex(p => p === null);
+            if (nextEmpty !== -1) {
+                state.selectedSlot = nextEmpty;
+            }
+
+            renderEnemySlots();
+            renderBrawlers();
+            updateRecommendations();
+        }
+
+        function updateRecommendations() {
+            const container = document.getElementById('recommendationsList');
+            const enemyBrawlers = state.enemyPicks.filter(Boolean).map(id => BRAWLERS.find(b => b.id === id));
+
+            if (enemyBrawlers.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 text-center">
+                        <p class="text-xs text-slate-400 font-semibold">Tap any enemy slot above and pick who they locked in!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Find top hard counters against current locked enemy picks
+            let scored = BRAWLERS.filter(b => !state.enemyPicks.includes(b.id)).map(brawler => {
+                let score = 0;
+                let counterReasons = [];
+
+                enemyBrawlers.forEach(enemy => {
+                    if (brawler.counters && brawler.counters[enemy.id]) {
+                        score += 10;
+                        counterReasons.push(`${brawler.name} ➔ ${brawler.counters[enemy.id]}`);
+                    }
+                });
+
+                return { brawler, score, reasons: counterReasons };
+            });
+
+            // Sort by highest score
+            scored.sort((a, b) => b.score - a.score);
+
+            const topPicks = scored.filter(s => s.score > 0).slice(0, 3);
+
+            if (topPicks.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs text-amber-300 font-semibold">
+                        ⚡ Recommended: Pick strong long-range Snipers (Piper/Angelo) or versatile Controllers (Otis/Gale).
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = topPicks.map(rec => {
+                const rarityMeta = RARITIES[rec.brawler.rarity];
+                return `
+                    <div class="glow-counter bg-slate-950 p-2 rounded-xl border border-amber-400/80 flex items-center justify-between gap-2 shadow-lg">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <div class="w-8 h-8 rounded-lg ${rarityMeta.badgeBg} text-slate-950 font-brawl flex items-center justify-center text-xs shrink-0 shadow">
+                                ${rec.brawler.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-brawl text-xs text-amber-400">${rec.brawler.name}</span>
+                                    <span class="text-[8px] font-bold px-1 rounded ${rarityMeta.bg} ${rarityMeta.color}">${rec.brawler.rarity}</span>
+                                </div>
+                                <div class="text-[10px] text-slate-200 font-semibold truncate">
+                                    ${rec.reasons.join(' • ')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Coach — Strategy Change Report (SnakeThug × Bobby video)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background:#0a0e1a; color:#e2e8f0; font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; line-height:1.5; padding:24px 14px 70px; }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { font-family:"Lilita One"; font-size:1.9rem; color:#fbbf24; text-align:center; }
+    .sub { text-align:center; color:#94a3b8; margin:4px 0 22px; font-size:.9rem; }
+    .back { display:inline-block; color:#67e8f9; text-decoration:none; margin-bottom:12px; font-weight:700; }
+    .row { background:#111827; border:1px solid #1f2937; border-radius:14px; margin-bottom:12px; overflow:hidden; }
+    .head { display:flex; align-items:center; gap:8px; padding:10px 14px; background:#0f1524; font-family:"Lilita One"; font-size:1rem; }
+    .num { background:#fbbf24; color:#0a0e1a; border-radius:8px; min-width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; }
+    .st { margin-left:auto; font-size:.62rem; font-weight:800; padding:2px 9px; border-radius:999px; letter-spacing:.06em; }
+    .st.applied { background:#22c55e22; color:#4ade80; border:1px solid #22c55e66; }
+    .st.already { background:#818cf822; color:#a5b4fc; border:1px solid #818cf866; }
+    .cols { display:grid; grid-template-columns:1fr 1fr; }
+    @media (max-width:640px){ .cols { grid-template-columns:1fr; } }
+    .col { padding:10px 14px 12px; font-size:.85rem; }
+    .col:first-child { border-right:1px solid #1f2937; }
+    @media (max-width:640px){ .col:first-child { border-right:none; border-bottom:1px solid #1f2937; } }
+    .lbl { font-size:.62rem; font-weight:800; letter-spacing:.1em; margin-bottom:4px; }
+    .lbl.before { color:#f87171; }
+    .lbl.after { color:#4ade80; }
+    .src { padding:8px 14px 12px; font-size:.72rem; color:#94a3b8; border-top:1px dashed #1f2937; }
+    .src b { color:#e2e8f0; }
+    .ts { color:#64748b; font-family:monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back" href="./">&#8592; Back to Draft Coach</a>
+    <h1>STRATEGY DIFF REPORT</h1>
+    <p class="sub">Source: <b style="color:#e2e8f0">"Master Drafting = Become Pro"</b> — SnakeThug quiz with Bobby (5 graded drafts + a live ranked draft) &bull; diffed against the app's encoded rulebook &bull; every row below is now applied</p>
+
+    <div class="row">
+        <div class="head"><span class="num">1</span> First pick = ban-aware safe all-rounder <span class="st applied">✅ APPLIED — engine</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>First-pick advice was class-shaped only (anti-tank in aggro / utility sniper in passive). It ignored what the bans freed up.</div>
+            <div class="col"><div class="lbl after">AFTER</div>On pick 1 the engine counts how many brawlers <i>still available to the enemy</i> counter a candidate. Few counters left → +11 "ban-freed pick: safe all-rounder opener". ≥5 counters still up → −10 "risky first pick". (Tara in the Double Swoosh quiz: her AoE counters were all banned → safe lane lock.)</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">04:04–05:21</span> — "you started looking at the bans… what does that free up, Tara? … exactly what I was looking for" (A+)</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">2</span> Don't draft two of the same role <span class="st applied">✅ APPLIED — engine</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Nothing stopped Anti-Tank #2 next to your locked Lou, or a 2nd/3rd Control in the same comp.</div>
+            <div class="col"><div class="lbl after">AFTER</div>Stacking warning: 2+ of a class → −18 "stop stacking the same role". For ANTI_TANK / CONTROL / SUPPORT even one duplicate → −8 "already have one — diversify". (Space Makers/Tank stay un-penalized: dive stacking is a real strategy.)</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">11:33–11:46</span> — "you don't want to take another anti-tank with the Lou… don't want to take two of the same brawler class"</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">3</span> Mind the enemy's remaining 6th pick <span class="st applied">✅ APPLIED — engine</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>The engine evaluated only already-locked enemy picks; nothing warned that your 4-5 pick invites their last-pick counter.</div>
+            <div class="col"><div class="lbl after">AFTER</div>On pick band 4-5, taking a <b>3rd sniper</b> → −25 "a 3rd sniper invites the enemy thrower counter-pick". (Quiz 4 example: two snipers early → enemy takes a thrower and the comp collapses.)</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">10:47–11:07</span> — "if you pick two snipers and then a sniper, the enemy picks a thrower and you lost… take care of the last pick"</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">4</span> Vs double-support heal comps, throwers can't close kills <span class="st applied">✅ APPLIED — engine</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>A thrower like Tick vs Gus + Byron scored purely on its counter data — even though the video rejected it.</div>
+            <div class="col"><div class="lbl after">AFTER</div>If the enemy has 2+ sustain units (Supports or UTILITY snipers like Gus/Byron), throwers get −15 "can't close kills vs a double-support heal comp" — pushing dive picks like Fang instead.</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">07:10–07:20</span> — "Tick… there's two support brawlers… it's going to be hard to get a kill versus a shield and heals and a Carl"</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">5</span> Heist last pick: Barley/Lou/Moe comp → Dyna burns the safe <span class="st applied">✅ APPLIED — data</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Dyna had no matchup data vs Lou/Moe, and Heist favored any hypercharge equally.</div>
+            <div class="col"><div class="lbl after">AFTER</div>Dyna now counters Lou ("very bad vs throwers") and Moe, plus a mode-keyed <b>heist</b> counter ("burst lobbed bombs = top Heist last pick"). Barley gains Lou/Moe counters too. A Heist "object race" bonus was added for throwers vs ground-bound comps. <b>Quiz reproduced:</b> Dyna #1, with dive picks next — Dyna beats Barley in Heist exactly as graded (A vs wanted-answer).</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">03:03–03:20</span> — "Lou and Moe are very bad versus throwers… because it's Heist, Dynamike would be a little bit better" (Barley = A, Dyna = best)</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">6</span> Fang counters the Carl + Byron core (post-buff) <span class="st applied">✅ APPLIED — data</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Fang had no counter data despite being a top-5 meta pick.</div>
+            <div class="col"><div class="lbl after">AFTER</div>Fang counters Carl ("buffed Super destroys Carl lanes") and Byron ("dives Byron before heals tick") — the exact reason Bobby graded the Fang pick as the free win on Shooting Star. In the sim Fang lands #2 with both counter reasons visible (an anti-diver meta pick edges #1 on raw mode fit). Also added: heal-stacks no longer count as "sniper stacks" for the divers rule, and Tanks get a kill-pressure bonus vs 2+ sustain units.</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">07:20–07:40</span> — "Fang destroys Carl and destroys Byron… doesn't mind the Gus knockback" (the wanted answer)</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">7</span> Nita / Maisie = save-a-bad-draft picks (Heist) <span class="st applied">✅ APPLIED — data</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Nita didn't counter Kaze; Maisie had zero matchup data at all.</div>
+            <div class="col"><div class="lbl after">AFTER</div>Maisie counters Bull ("dash-stun stops the push") and Kaze, with tip "defense into offense: hypercharge shreds for % from range". Nita gains Kaze ("bear keeps Kaze off the objective — defense turns offense"). Both counter the damage threats, then convert into safe-damage offense — the only way to win the Pit Stop quiz draft. Kenji also gains the quiz-4 counters (Hank "feeds hypercharges", Barley) and the dive-bonus now stays off when they run their own dive threat, so shutdown picks like <b>Nita rank #1</b> in the sim — quiz reproduced.</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">16:37–18:17</span> — "the two answers are Nita and Maisie… defend Kaze and Bull first, then turn defense into offense" (C for RT/Griff: defense-only loses Heist)</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">8</span> Gray, Hank, Crow notes <span class="st applied">✅ APPLIED — data</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Gray had no counters; Hank and Crow had no draft notes.</div>
+            <div class="col"><div class="lbl after">AFTER</div>Gray counters Carl + Byron (teleport). Hank gets tip "playable passive — even into anti-tanks, never run it down". Crow gets a tip "anti-healer — best vs heal comps (Barley/Jae-Yong), run the lower-heal star power" and counters Barley + Jae-Yong.</div>
+        </div>
+        <div class="src"><b>Timestamps:</b> <span class="ts">07:28</span> (Gray vs Carl/Byron), <span class="ts">09:26–09:35</span> (Hank playable passive), <span class="ts">21:12–21:44</span> (Crow anti-healer + star power)</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">9</span> Opponent-first bans also cover meta divers <span class="st applied">✅ APPLIED — engine</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Aggro bans when the opponent picks first = meta anti-tanks only (Chester/Moe/Otis…).</div>
+            <div class="col"><div class="lbl after">AFTER</div>Pool widened to meta <b>anti-tanks + divers</b> (Kaze, Shade, Alli, Mortis, Edgar, Bull…) — matching the live draft where Bobby named "Kaze, Cord and Lumi were the three best bans" and "ban super strong brawlers you want to avoid them getting".</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">20:12–20:30</span> — "ban super strong brawlers… Kaze, Cord and Lumi were the three best bans"</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">10</span> Map bank: Parallel Place <span class="st applied">✅ APPLIED — data</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Hot Zone map list had only Dueling Beetles + Ring of Fire.</div>
+            <div class="col"><div class="lbl after">AFTER</div>Parallel Place (the live ranked map in the video) added to Hot Zone.</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">20:00–20:10</span> — live ranked draft on Parallel Place</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num">11</span> Engine tuning set (so the quizzes reproduce) <span class="st applied">✅ APPLIED — engine</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>Raw class bonuses scaled by composition alone: "no enemy anti-tank → dive +85" fired even when they ran Kaze/Bull-type threats, snipers-stack detection counted utility snipers (Byron/Gus) as snipers, and throwers got no objection to anti-tank screens.</div>
+            <div class="col"><div class="lbl after">AFTER</div>1) Heist +55 object-race for throwers vs ground-bound comps; 2) the dive bonus only fires vs fully-passive comps (vs dive threats you need shutdown picks — the Nita rule); 3) "stacked snipers" now counts PURE snipers only; 4) the thrower-punish bonus softens when the enemy fields 2+ anti-tanks (the screen); 5) last-pick kill-pressure bonus for Tanks vs 2+ sustain units.</div>
+        </div>
+        <div class="src"><b>Derived from:</b> the graded outcomes across all five quizzes <span class="ts">(03:03, 07:05, 13:05, 16:37)</span> — grades A/A+/B/B−/C anchor the weights.</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num" style="background:#818cf8">12</span> Assassin &gt; thrower-mirror vs a lone Barley (aggro map) <span class="st already">ℹ️ ALREADY ENCODED</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>—</div>
+            <div class="col"><div class="lbl after">No change: the engine already pushes SPACE_MAKER "+80 punish their passive sniper/thrower picks" on band 4-5 in aggro, which is this rule.</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">20:42–21:05</span> — "assassin is a little bit better into just a Barley on an aggressive map than matching it with a thrower"</div>
+    </div>
+
+    <div class="row">
+        <div class="head"><span class="num" style="background:#818cf8">13</span> "Lou + Hank on the same team = pro auto-win" <span class="st already">ℹ️ NOTED (no change)</span></div>
+        <div class="cols">
+            <div class="col"><div class="lbl before">BEFORE</div>—</div>
+            <div class="col"><div class="lbl after">High-elo pairing trivia — engine can't act on it beyond Hank's new "playable passive" tip; Hank's role as anti-tank food is already handled by Lou-type counter data elsewhere.</div>
+        </div>
+        <div class="src"><b>Timestamp:</b> <span class="ts">10:11–10:21</span> — "if a team gets both Lou and Hank they automatically win… force the Hank so you don't lose"</div>
+    </div>
+
+    <p class="sub" style="margin-top:26px">Rulebook now encodes: Parts 1 &amp; 2 (bobby) + this quiz video &bull; report generated Oct 2026</p>
+</div>
+</body>
+</html>

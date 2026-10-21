@@ -1,0 +1,9 @@
+{
+  // Cloudflare Workers config — static assets only, no build step.
+  // Deploy: npx wrangler deploy   (requires Node 18+ and one-time `npx wrangler login`)
+  "name": "brawl-stars-ranked-drafter",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./public"
+  }
+}

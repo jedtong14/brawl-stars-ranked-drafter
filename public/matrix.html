@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Coach — Draft Matrix (all brawlers by group)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background:#0a0e1a; color:#e2e8f0; font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; line-height:1.5; padding:24px 12px 80px; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1, h2, .font-brawl { font-family:"Lilita One", ui-sans-serif; letter-spacing:.5px; }
+    h1 { font-size:2rem; color:#fbbf24; text-align:center; }
+    .sub { text-align:center; color:#94a3b8; margin:4px 0 20px; }
+    .back { display:inline-block; color:#67e8f9; text-decoration:none; font-weight:700; margin-bottom:12px; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    th, td { padding:7px 8px; border-bottom:1px solid #1f2937; vertical-align:top; text-align:left; }
+    th { color:#94a3b8; font-weight:600; text-transform:uppercase; font-size:.7rem; letter-spacing:.08em; }
+    tr:last-child td { border-bottom:none; }
+    section.card { background:#111827; border:1px solid #1f2937; border-radius:14px; padding:14px 14px 6px; margin-bottom:16px; }
+    section h2 { font-size:1.15rem; display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+    .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .ctip { color:#94a3b8; font-size:.8rem; margin-bottom:8px; }
+    img.port { width:34px; height:34px; border-radius:8px; }
+    .nm { font-weight:700; white-space:nowrap; }
+    .tag { display:inline-block; border:1px solid; border-radius:999px; padding:0 7px; font-size:.68rem; font-weight:700; margin:1px 2px 1px 0; white-space:nowrap; }
+    .tag.meta { color:#fbbf24; border-color:#fbbf2466; background:#fbbf2411; }
+    .mtag { color:#818cf8; border:1px solid #818cf866; border-radius:999px; padding:0 6px; font-size:.65rem; font-weight:700; display:inline-block; margin:1px 2px 1px 0; }
+    .beat { color:#4ade80; }
+    .beats { color:#94a3b8; }
+    .cnt { color:#fbbf24; }
+    .legend { background:#111827; border:1px solid #1f2937; border-radius:14px; padding:12px 14px; margin-bottom:16px; font-size:.78rem; color:#94a3b8; }
+    .legend b { color:#e2e8f0; }
+    .grpnav { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:16px; }
+    .grpnav a { text-decoration:none; font-weight:700; font-size:.8rem; border:1px solid #1f2937; background:#111827; border-radius:999px; padding:4px 12px; }
+    a.here { color:#67e8f9; text-decoration:none; }
+    @media (max-width:640px){ .hide-sm { display:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back" href="./">&#8592; Back to Draft Coach</a>
+    <h1>DRAFT MATRIX</h1>
+    <p class="sub">All 108 brawlers sorted by cheat-sheet group - classes, trait flags, Buffie status, best modes, meta status &amp; matchup data encoded from Bobby's guide (plus the 2026 new-era additions).</p>
+    <div class="legend" id="legend"></div>
+    <div class="grpnav" id="grpnav"></div>
+    <div id="matrix"></div>
+    <p class="sub" style="margin-top:28px">&#127919; star = Part 2 current-meta top-5 of its class &bull; open the counters panel in the app for enemy-specific counter logic &bull; strategy: Bobby's draft guide (Parts 1 &amp; 2)</p>
+</div>
+
+<script>
+// ============ DATA (mirrors public/index.html — keep in sync when data changes) ============
+const IC = 'https://cdn.brawlify.com/brawlers/borderless/';
+const CLASS_META = {
+    ANTI_TANK:   { label:'Anti-Tank', hex:'#e2e8f0', tip:'Huge burst in <1s + stun/mute/knockback. Best first pick in aggressive modes.' },
+    SPACE_MAKER: { label:'Space Maker', hex:'#22c55e', tip:'Dash/teleport mobility. Takes 2 enemies to kill; splits focus. Pick turns 4-5.' },
+    CONTROL:     { label:'Control',   hex:'#67e8f9', tip:'No reliable stun, but holds space & locks out mid-range. Good 2/3 pick.' },
+    SNIPER:      { label:'Sniper',    hex:'#a3e635', tip:'Range. Passive modes; pure snipers fear space makers; utility snipers flex.' },
+    TANK:        { label:'Tank',      hex:'#f87171', tip:'Fat HP pool, no gap closer. Beats low-damage comps; dies to throwers/snipers.' },
+    SUPPORT:     { label:'Support',   hex:'#c084fc', tip:'Speed/heal/teleport utility — not the win condition; needs a damage partner.' },
+    THROWER:     { label:'Thrower',   hex:'#fbbf24', tip:'Shots over walls. Last-pick only; dies to aggro; weak in thrower mirrors.' }
+};
+const CLASS_MODES = {
+    ANTI_TANK:['bb','gg','hz','heist'], SPACE_MAKER:['bb','gg','hz','heist'], TANK:['bb','hz','heist'],
+    CONTROL:['bb','gg','hz'], SNIPER:['gg','ko','bounty'], SUPPORT:['bb','gg','hz','heist','ko','bounty'], THROWER:['ko','bounty']
+};
+const TRAIT_META = {
+    HYPER:{hex:'#fbbf24',label:'Good Hyper'}, KB:{hex:'#f87171',label:'Knockback/Stun'}, WALLBREAK:{hex:'#4ade80',label:'Wall Break'},
+    PIERCE:{hex:'#818cf8',label:'Pierce Damage'}, SPECIAL:{hex:'#67e8f9',label:'Support'}
+};
+const MODE_SHORT = { bb:'BB', gg:'Gem', hz:'HotZone', heist:'Heist', ko:'KO', bounty:'Bounty' };
+const MODE_NAME  = { bb:'Brawl Ball', gg:'Gem Grab', hz:'Hot Zone', heist:'Heist', ko:'Knockout', bounty:'Bounty' };
+const META5 = new Set(['otis','crow','colette','chester','moe','lumi','naija','gene','stu','leon','sirius','larry','berry','juju','ziggy','pierce','angelo','belle','byron','gus','kaze','shade','alli','mortis','edgar','bull','frank','bibi','fang','rosa','max','poco','kit','glowy']);
+// Buffie roster: brawlers with Supercell's Buffie upgrades (Gadget/Star Power/Hypercharge boosts)
+const BUFFIES = new Set(['colette','leon','edgar','crow','mortis','rico','brock','8bit','meg','max','surge','poco','el_primo','amber','gus','chuck','shade']);
+const NAME = {}; const B = [];
+const b = (id, name, cls, traits, scid, extra) => { B.push(Object.assign({ id, name, cls, traits: traits ? traits.split('+') : [], scid }, extra || {})); NAME[id] = name; };
+// ===== THROWER =====
+b('barley','Barley','THROWER','HYPER',16000006,{counters:{shelly:'Keeps away with pools',jacky:'Safe behind walls',lou:'Lou melts vs throwers',moe:'Lobbed shots ignore the drill zone'}});
+b('dynamike','Dyna','THROWER','KB+HYPER',16000009,{counters:{frank:'Stun gadget behind walls',otis:'Safe lob over walls',lou:'Lou is very bad vs throwers',moe:'Lobbed bombs ignore Moe',heist:'Burst lobbed bombs = top Heist last pick'}});
+b('larry','Larry','THROWER','',16000077);
+b('tick','Tick','THROWER','',16000022);
+b('sprout','Sprout','THROWER','',16000037,{counters:{piper:'Blocks line of sight with wall'}});
+b('grom','Grom','THROWER','',16000048);
+b('ziggy','Ziggy','THROWER','',16000098);
+b('sirius','Sirius','THROWER','',16000102);
+b('juju','Juju','THROWER','',16000087);
+b('willow','Willow','THROWER','SPECIAL',16000067,{modes:['bb','hz'],tip:'Anti-tank & dive threat'});
+b('berry','Berry','THROWER','SPECIAL',16000082,{modes:['heist','hz']});
+// ===== TANK =====
+b('trunk','Trunk','TANK','',16000096);
+b('draco','Draco','TANK','HYPER',16000080,{counters:{mortis:'Dragon form overpowers',edgar:'Dragon form survives burst'}});
+b('frank','Frank','TANK','WALLBREAK',16000020,{counters:{poco:'Overpowers low DPS',byron:'Traverses poison'}});
+b('fang','Fang','TANK','SPECIAL',16000054,{counters:{carl:'Buffed Super destroys Carl lanes',byron:'Dives Byron before heals tick'}});
+b('buster','Buster','TANK','',16000062);
+b('el_primo','Primo','TANK','',16000010,{counters:{bull:'Suplex gadget cancel',frank:'Cancels Super with jump'}});
+b('hank','Hank','TANK','',16000069,{tip:'Playable passive — even into anti-tanks, never run it down'});
+b('jacky','Jacky','TANK','',16000034,{counters:{mortis:'Counter crush damages dash',edgar:'Pulls & melts close-up'}});
+b('rosa','Rosa','TANK','',16000024,{counters:{mortis:'Shield negates dashes',edgar:'Shield absorbs burst'}});
+b('ash','Ash','TANK','',16000051);
+// ===== Sp./A (Space Makers / Assassins) =====
+b('bull','Bull','SPACE_MAKER','HYPER',16000002,{counters:{edgar:'Out-damages jump',mortis:'2 shotgun bursts kill'}});
+b('bibi','Bibi','SPACE_MAKER','',16000026,{counters:{frank:'Home Run knockback cancels Super',edgar:'Knocks away jump'}});
+b('ollie','Ollie','SPACE_MAKER','',16000090);
+b('kenji','Kenji','SPACE_MAKER','',16000085,{counters:{hank:'Feeds Kenji hypercharges — each charge is a free kill',barley:'Charges off Barley shots then dives'}});
+b('mortis','Mortis','SPACE_MAKER','HYPER',16000011,{counters:{dynamike:'Dashes through explosives',barley:'Dives safely',piper:'Dashes under snipes',sprout:'Bypasses walls'}});
+b('shade','Shade','SPACE_MAKER','',16000086);
+b('mina','Mina','SPACE_MAKER','',16000097);
+b('buzz','Buzz','SPACE_MAKER','KB',16000049);
+b('alli','Alli','SPACE_MAKER','',16000095);
+b('carl','Carl','SPACE_MAKER','',16000025,{counters:{piper:'Super dives snipers',brock:'Survives rockets'}});
+b('edgar','Edgar','SPACE_MAKER','HYPER',16000043,{counters:{dynamike:'Direct jump kill',barley:'Direct jump kill',sprout:'Jumps over walls'}});
+b('kaze','Kaze','SPACE_MAKER','',16000094);
+b('lily','Lily','SPACE_MAKER','SPECIAL',16000081);
+b('mico','Mico','SPACE_MAKER','',16000075,{counters:{dynamike:'Invulnerable jump over bombs',barley:'Jumps over puddles',piper:'Direct dive on snipers'}});
+b('sam','Sam','SPACE_MAKER','',16000060);
+b('chuck','Chuck','SPACE_MAKER','SPECIAL',16000073,{counters:{heist:'Dash loops melt the Heist safe'}});
+b('gigi','Gigi','SPACE_MAKER','',16000100);
+b('melodie','Melodie','SPACE_MAKER','',16000078);
+b('darryl','Darryl','SPACE_MAKER','',16000018);
+// ===== ANTI-TANK =====
+b('chester','Chester','ANTI_TANK','HYPER',16000063);
+b('nita','Nita','ANTI_TANK','HYPER',16000008,{counters:{bull:'Bear tanks shotgun',el_primo:'Bear zones melee',kaze:'Bear keeps Kaze off the objective — defense turns offense'}});
+b('moe','Moe','ANTI_TANK','',16000084);
+b('rico','Rico','ANTI_TANK','',16000004,{counters:{bull:'Bounces shots in lanes',el_primo:'Melts in tight walls'}});
+b('tara','Tara','ANTI_TANK','HYPER',16000017,{counters:{mortis:'Shadows block dashes',edgar:'Super pulls & melts'}});
+b('emz','Emz','ANTI_TANK','HYPER',16000030,{counters:{frank:'Friendzone knockback',el_primo:'Keeps tanks at range',draco:'Friendzone pushes away'}});
+b('lou','Lou','ANTI_TANK','',16000041);
+b('finx','Finx','ANTI_TANK','',16000092);
+b('ruffs','Ruffs','ANTI_TANK','',16000044);
+b('sandy','Sandy','ANTI_TANK','HYPER',16000028,{counters:{piper:'Sandstorm covers team gap'}});
+b('otis','Otis','ANTI_TANK','SPECIAL+KB',16000059,{modes:['bb','gg','hz','ko','bounty'],counters:{frank:'Mutes Super windup',draco:'Mutes Dragon form',edgar:'Mutes jump landing',mortis:'Mutes dash attack'}});
+b('lumi','Lumi','ANTI_TANK','KB',16000091);
+b('shelly','Shelly','ANTI_TANK','KB',16000000,{counters:{mortis:'Instant Super blast',edgar:'Super cancels landing',frank:'Super stuns & cancels'}});
+b('surge','Surge','ANTI_TANK','',16000038);
+b('charlie','Charlie','ANTI_TANK','',16000074);
+b('gale','Gale','ANTI_TANK','KB',16000035,{counters:{mortis:'Twister gadget blocks dash',edgar:'Super pushes away',frank:'Stuns against walls',el_primo:'Hard stops jump'}});
+b('spike','Spike','ANTI_TANK','',16000005,{counters:{frank:'Life plant blocks & melts',bull:'Curveball kites tanks'}});
+b('cordelius','Cord','ANTI_TANK','SPECIAL',16000070,{counters:{frank:'Shadow realm mutes Super',draco:'Shadow realm steals dragon form'}});
+b('maisie','Maisie','ANTI_TANK','KB',16000068,{counters:{bull:'Dash-stun stops the Bull push',kaze:'Out-zones Kaze off the objective'},tip:'Defense into offense: hypercharge shreds for % from range'});
+b('colt','Colt','ANTI_TANK','WALLBREAK+PIERCE',16000001,{counters:{frank:'Melts huge HP bar','8bit':'Out-maneuvers slow speed'}});
+b('griff','Griff','ANTI_TANK','',16000050,{counters:{frank:'Melts huge HP with Super',el_primo:'Point blank cards obliterate'}});
+b('crow','Crow','ANTI_TANK','SPECIAL',16000012,{counters:{poco:'Poison stops healing',byron:'Poison reduces healing',barley:'Anti-heal pressure overwhelms Barley sustain',jae_yong:'Poison cuts the healer sustain'},tip:'Anti-healer — best vs heal comps (Barley/Jae-Yong)'});
+b('8bit','8-Bit','ANTI_TANK','',16000027);
+b('clancy','Clancy','ANTI_TANK','',16000083);
+b('colette','Colette','ANTI_TANK','',16000039,{counters:{frank:'% HP damage shreds HP',meg:'Melts mech in 2 shots',draco:'Melts dragon form',el_primo:'% HP damage'}});
+b('meg','Meg','ANTI_TANK','',16000052,{counters:{mortis:'Mech HP absorbs dashes',edgar:'Mech out-sustains'}});
+// ===== SUPPORT =====
+b('kit','Kit','SUPPORT','HYPER',16000076,{counters:{piper:'Invisible jump locks sniper'}});
+b('max','Max','SUPPORT','',16000032,{counters:{frank:'Out-speed Super windup',dynamike:'Dodges bombs easily'}});
+b('gray','Gray','SUPPORT','',16000064,{counters:{carl:'Super teleports right onto Carl',byron:'Teleport lands on Byron — nothing he can do'},tip:'Gray always works on Shooting Star-type maps'});
+b('poco','Poco','SUPPORT','HYPER',16000013,{counters:{crow:'Heals off poison tick',gene:'Scream gadget clears CC'}});
+b('jae_yong','Jae-Yong','SUPPORT','',16000093);
+b('doug','Doug','SUPPORT','SPECIAL',16000071);
+b('glowy','Glowy','SUPPORT','',16000101);
+// ===== SNIPER =====
+b('mandy','Mandy','SNIPER','HYPER',16000065,{sub:'PURE'});
+b('rt','RT','SNIPER','',16000066,{sub:'UTILITY'});
+b('gus','Gus','SNIPER','KB',16000061,{sub:'UTILITY',counters:{mortis:'Knockback shield gadget',edgar:'Shield absorbs jump'}});
+b('piper','Piper','SNIPER','KB+HYPER',16000015,{sub:'PURE',counters:{frank:'Outranges & knockback',shelly:'Far outranges'}});
+b('brock','Brock','SNIPER','WALLBREAK+HYPER',16000003,{sub:'PURE'});
+b('byron','Byron','SNIPER','SPECIAL',16000042,{sub:'UTILITY',counters:{crow:'Malignant potion stops heal'}});
+b('angelo','Angelo','SNIPER','',16000079,{sub:'UTILITY',counters:{colette:'Outranges from water',frank:'Snipes safely across water'}});
+b('pierce','Pierce','SNIPER','',16000099,{sub:'UTILITY'});
+b('nani','Nani','SNIPER','',16000036,{sub:'PURE',counters:{piper:'Return-to-sender reflects shot',angelo:'Return-to-sender reflects shot'}});
+b('belle','Belle','SNIPER','',16000046,{sub:'UTILITY',counters:{frank:'Spotlight mark increases dmg',draco:'Spotlight mark neutralizes HP'}});
+b('bea','Bea','SNIPER','',16000029,{sub:'PURE',counters:{frank:'Charged honey shot shreds',meg:'Slows & melts mech'}});
+// ===== CONTROL =====
+b('amber','Amber','CONTROL','',16000040,{counters:{frank:'Continuous fire melts HP',edgar:'Fire dancing gadget'}});
+b('meeple','Meeple','CONTROL','',16000089);
+b('leon','Leon','CONTROL','SPECIAL',16000023,{counters:{piper:'Invisibility sneaks up',angelo:'Invisibility catches charge'}});
+b('pam','Pam','CONTROL','',16000016,{counters:{mortis:'Scrapturret sucks ammo',edgar:'Knockback gadget'}});
+b('bo','Bo','CONTROL','KB',16000014,{counters:{edgar:'Mine knockback cancels jump',mortis:'Mines block dashes'}});
+b('pearl','Pearl','CONTROL','',16000072);
+b('gene','Gene','CONTROL','',16000021,{counters:{piper:'Pulls squishy snipers',crow:'Knockback gadget cancels dive'}});
+b('stu','Stu','CONTROL','WALLBREAK',16000045,{counters:{frank:'Endless knockback dashes',bull:'Kites endlessly'}});
+b('janet','Janet','CONTROL','',16000057);
+b('penny','Penny','CONTROL','',16000019,{counters:{nita:'Salty barrel splash',ash:'Mortar destroys rats'}});
+b('jessie','Jessie','CONTROL','',16000007,{counters:{nita:'Bounce shots off Bear',poco:'Turret out-damages heals'}});
+b('squeak','Squeak','CONTROL','',16000047);
+b('eve','Eve','CONTROL','',16000056);
+b('lola','Lola','CONTROL','',16000053);
+b('naija','Naija','CONTROL','',16000103);
+b('bonnie','Bonnie','CONTROL','',16000058);
+b('mr_p','Mr. P','CONTROL','',16000031);
+// ===== 2026 NEW-ERA ADDITIONS (not on Bobby's 101 cheat-sheet) =====
+b('bolt','Bolt','TANK','WALLBREAK',16000106,{counters:{piper:'Rolls too fast to snipe',dynamike:'Fast rolls dodge lobs',colt:'Rolls through the lanes'}});
+b('damian','Damian','TANK','KB',16000104,{tip:'Speaker bounce + knock-into-wall stuns; Wall of Sound zones'});
+b('wendy','Wendy','SUPPORT','',16000108,{tip:'Shield generator absorbs team damage — strong 2nd half of heal comp'});
+b('nori','Nori','SPACE_MAKER','KB+WALLBREAK',16000107,{counters:{dynamike:'Over-wall rod dive',barley:'Over-wall rod dive',piper:'Rod pull erases all range',berry:'Rod pull erases all range'}});
+b('nova','Starr Nova','SPACE_MAKER','SPECIAL',16000105,{counters:{piper:'Sword rush beats burst window',bea:'Closes range before charged shot',byron:'Hunts the healer'}});
+b('cosmo','Cosmo','CONTROL','KB',16000109,{counters:{mortis:'Telescope Trap freezes dashes',edgar:'Grounds the jump',moe:'Trap freezes the drill dash',fang:'Grounds the dive'}});
+b('vince','Vince','CONTROL','',16000110,{tip:'Moth collection escalates — punish before it snowballs'});
+
+// ============ RENDER ============
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ORDER = ['THROWER','TANK','SPACE_MAKER','ANTI_TANK','SUPPORT','SNIPER','CONTROL'];
+const GROUP_COUNT = {}; B.forEach(x => GROUP_COUNT[x.cls] = (GROUP_COUNT[x.cls] || 0) + 1);
+
+document.getElementById('legend').innerHTML =
+    '<b>Trait flags:</b> ' + Object.entries(TRAIT_META).map(([k, t]) =>
+        `<span class="tag" style="color:${t.hex};border-color:${t.hex}66">${t.label}</span>`).join(' ') +
+    ' <br><b>Best modes</b> = default mode affinity per group (a brawler can override it). ' +
+    '<span class="tag meta">&#127919; top-5</span> = Bobby\'s Part 2 current-meta top picks of that class. ' +
+    '<span class="tag" style="color:#f0abfc;border-color:#f0abfc66">&#129514; Buffie</span> = has Supercell\'s Buffie upgrades (Gadget/Star Power/Hypercharge boosts). ' +
+    '<span class="cnt">green names</span> in the last column = matchups this brawler wins; hover for the why.';
+
+document.getElementById('grpnav').innerHTML = ORDER.map((k, i) =>
+    `<a href="#g${i}" style="color:${CLASS_META[k].hex}">${esc(CLASS_META[k].label)} (${GROUP_COUNT[k]})</a>`).join('');
+
+document.getElementById('matrix').innerHTML = ORDER.map((cls, gi) => {
+    const m = CLASS_META[cls];
+    const group = B.filter(x => x.cls === cls);
+    const rows = group.map(x => {
+        const modes = (x.modes || CLASS_MODES[cls] || []).map(md =>
+            `<span class="mtag" title="${esc(MODE_NAME[md])}">${MODE_SHORT[md]}</span>`).join('');
+        const traits = (x.traits || []).map(t => TRAIT_META[t] ?
+            `<span class="tag" style="color:${TRAIT_META[t].hex};border-color:${TRAIT_META[t].hex}66">${TRAIT_META[t].label}</span>` : '').join('');
+        const cnt = x.counters ? Object.entries(x.counters).map(([k, v]) =>
+            MODE_SHORT[k]
+                ? `<span title="${esc(v)}"><span class="mtag">&#9989; ${MODE_SHORT[k]}</span></span>`
+                : `<span class="beat" title="${esc(v)}">${esc(NAME[k] || k)}</span>`).join(', ')
+            : '<span class="beats">&#8212;</span>';
+        const sub = x.sub ? ` <span class="tag" style="color:#94a3b8;border-color:#475569">${x.sub}</span>` : '';
+        const buffy = BUFFIES.has(x.id) ? ' <span class="tag" style="color:#f0abfc;border-color:#f0abfc66" title="Has Buffie upgrades (Gadget/Star Power/Hypercharge)">&#129514; Buffie</span>' : '';
+        const metaStar = META5.has(x.id) ? ' <span class="tag meta">&#127919; top-5</span>' : '';
+        const tip = x.tip ? `<div class="hide-sm" style="color:#94a3b8;font-size:.72rem">${esc(x.tip)}</div>` : '';
+        return `<tr>
+            <td><img class="port" loading="lazy" src="${IC}${x.scid}.png" alt="" onerror="this.style.visibility='hidden'"></td>
+            <td class="nm">${esc(x.name)}${sub}${metaStar}${buffy}${tip ? '<br>' + tip : ''}</td>
+            <td>${traits || '<span class="beats">&#8212;</span>'}</td>
+            <td>${modes}</td>
+            <td>${cnt}</td>
+        </tr>`;
+    }).join('');
+    return `<section class="card" id="g${gi}">
+        <h2 style="color:${m.hex}"><span class="dot" style="background:${m.hex}"></span>${esc(m.label)} (${GROUP_COUNT[cls]})</h2>
+        <p class="ctip">${esc(m.tip)}</p>
+        <table>
+            <tr><th></th><th>Brawler</th><th class="hide-sm">Traits</th><th>Best modes</th><th>Matchup data (beats &#8230; / strong on)</th></tr>
+            ${rows}
+        </table>
+    </section>`;
+}).join('');
+</script>
+</body>
+</html>

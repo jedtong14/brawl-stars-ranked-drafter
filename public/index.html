@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brawl Stars Draft Coach</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Lilita One & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #080c14;
+            color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+        .brawl-stroke {
+            text-shadow: 2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .touch-btn { transition: transform 0.08s ease, filter 0.08s ease; }
+        .touch-btn:active { transform: scale(0.94); filter: brightness(1.2); }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.8); }
+        }
+        .glow-counter { animation: pulse-glow 2s infinite; }
+    </style>
+</head>
+<body class="pb-10 max-w-md md:max-w-3xl lg:max-w-6xl mx-auto min-h-screen flex flex-col border-x border-slate-800/50 shadow-2xl">
+
+    <!-- STICKY TOP DRAFT BAR -->
+    <header class="sticky top-0 z-50 bg-slate-900/95 border-b border-slate-800 backdrop-blur-md px-3 py-2.5 shadow-xl">
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-1.5">
+                <span class="w-6 h-6 bg-amber-400 text-slate-950 rounded-lg flex items-center justify-center font-brawl text-xs shadow">
+                    <i class="fa-solid fa-chess-knight"></i>
+                </span>
+                <h1 class="font-brawl text-lg text-amber-400 tracking-wide brawl-stroke">DRAFT COACH</h1>
+                <a href="./guide.html" target="_blank" class="touch-btn text-[10px] font-brawl text-cyan-300 border border-cyan-400/40 rounded-lg px-2 py-1 hover:bg-cyan-400/10 shrink-0">&#63; GUIDE</a>
+                <a href="./matrix.html" target="_blank" class="touch-btn text-[10px] font-brawl text-amber-300 border border-amber-400/40 rounded-lg px-2 py-1 hover:bg-amber-400/10 shrink-0">&#9883; MATRIX</a>
+                <a href="./strategy-diff.html" target="_blank" class="touch-btn text-[10px] font-brawl text-red-300 border border-red-400/40 rounded-lg px-2 py-1 hover:bg-red-400/10 shrink-0">&#9654; DIFF</a>
+            </div>
+            <button onclick="resetAll()" class="touch-btn text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1 uppercase tracking-wider">
+                <i class="fa-solid fa-rotate-right text-amber-400"></i> Reset
+            </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <select id="modeSelect" onchange="onModeChange()" class="w-full bg-slate-950 border border-slate-700 text-xs text-amber-300 font-bold py-1.5 px-2 rounded-xl focus:outline-none focus:border-amber-400"></select>
+            <select id="mapSelect" onchange="onMapChange()" class="w-full bg-slate-950 border border-slate-700 text-xs text-slate-200 font-semibold py-1.5 px-2 rounded-xl focus:outline-none focus:border-amber-400"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <select id="slotSelect" onchange="onSlotChange()" class="w-full bg-slate-950 border border-slate-700 text-xs text-slate-200 font-semibold py-1.5 px-2 rounded-xl focus:outline-none focus:border-amber-400">
+                <option value="1">PICK 1 (first lock)</option>
+                <option value="23">PICK 2/3 (mid draft)</option>
+                <option value="45">PICK 4-5 (last picks)</option>
+            </select>
+            <select id="coinSelect" onchange="onCoinChange()" class="w-full bg-slate-950 border border-slate-700 text-xs text-slate-200 font-semibold py-1.5 px-2 rounded-xl focus:outline-none focus:border-amber-400">
+                <option value="lose">🪙 Opponent picks first</option>
+                <option value="win">🪙 We pick first</option>
+            </select>
+        </div>
+
+        <div class="flex justify-end">
+            <span id="metaBadge" class="text-[9px] font-bold px-2 py-1 rounded-full uppercase border whitespace-nowrap"></span>
+        </div>
+    </header>
+
+    <main class="flex-1 px-3 pt-3 space-y-3 md:px-5">
+
+
+        <!-- Laptop: left column = score table + intel · right column = brawler selection -->
+        <div class="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
+
+            <div class="space-y-3 min-w-0">
+        <!-- DRAFT BOARD: merged card — bans strip + blue/red arena + odds pill + lane matchups (one card, Prodigy-style) -->
+        <section class="bg-slate-900/95 border-2 border-purple-500/40 rounded-2xl p-3 shadow-xl">
+            <div class="flex items-center justify-between gap-2 mb-2 px-0.5">
+                <button id="targetYou" onclick="setTarget('you')" class="target-btn touch-btn text-[9px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider">Pick Blue</button>
+                <span class="font-brawl text-purple-300 text-xs tracking-wider brawl-stroke"><i class="fa-solid fa-scale-balanced text-purple-400 mr-1"></i>DRAFT BOARD</span>
+                <button id="targetEnemy" onclick="setTarget('enemy')" class="target-btn touch-btn text-[9px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider">Pick Red</button>
+            </div>
+
+            <div class="relative rounded-2xl overflow-hidden border border-slate-700/70">
+                <div class="absolute inset-0 grid grid-cols-2">
+                    <div class="bg-gradient-to-b from-blue-700/50 via-blue-800/25 to-slate-900/10 border-r-4 border-slate-900/70"></div>
+                    <div class="bg-gradient-to-b from-red-700/50 via-red-800/25 to-slate-900/10"></div>
+                </div>
+                <div id="vsOdds" class="absolute top-2 left-1/2 -translate-x-1/2 z-10 font-brawl text-sm px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap"></div>
+                <div class="relative grid grid-cols-2 pt-11 pb-9 px-2">
+                    <div class="flex flex-col items-center gap-2" id="arenaYours"></div>
+                    <div class="flex flex-col items-center gap-2" id="arenaFoes"></div>
+                </div>
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-brawl text-3xl text-white brawl-stroke pointer-events-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">VS</div>
+                <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5" id="arenaBans"></div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 mt-2.5 mb-1.5">
+                <button id="targetBan" onclick="setTarget('ban')" class="target-btn touch-btn text-[9px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider bg-slate-800 text-slate-400 border-slate-700">Ban</button>
+                <span class="text-[9px] text-slate-500 italic text-right">Engine estimate — counter pairs, class geometry, mode &amp; map weighting.</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2" id="vsLanes"></div>
+            <details class="mt-2">
+                <summary class="text-[9px] font-bold text-slate-400 uppercase tracking-wider cursor-pointer select-none">Recommended bans ▾</summary>
+                <div id="banList" class="space-y-1.5 mt-1.5"></div>
+            </details>
+        </section>
+
+                <!-- TOP RECOMMENDATIONS (score table — always visible while drafting) -->
+        <section class="bg-slate-900/95 border-2 border-amber-400/80 rounded-2xl p-3 shadow-xl relative overflow-hidden">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-bolt text-amber-400 text-sm"></i>
+                    <h2 class="font-brawl text-amber-400 text-sm tracking-wide brawl-stroke">SCORE</h2>
+                </div>
+                <span id="ruleHint" class="text-[9px] font-bold bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full uppercase border border-amber-400/30 text-center"></span>
+            </div>
+            <div id="recommendationsList" class="space-y-1.5"></div>
+        </section>
+
+        <!-- Standalone VS BOARD removed — merged into the DRAFT BOARD card above -->
+
+                <!-- DRAFT INTEL -->
+                <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shadow-lg space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <div class="text-[9px] font-bold text-green-400 uppercase tracking-wider mb-1"><i class="fa-solid fa-hand-fist"></i> In Your Hand</div>
+                    <div id="counterList" class="space-y-1 text-[10px] text-slate-300"></div>
+                </div>
+                <div>
+                    <div class="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Watch Out</div>
+                    <div id="threatList" class="space-y-1 text-[10px] text-slate-300"></div>
+                </div>
+            </div>
+        </section>
+
+            </div><!-- /left column -->
+
+            <div class="space-y-3 min-w-0">
+
+                <!-- BRAWLER SELECTION GRID BY DRAFT CLASS -->
+                <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shadow-lg space-y-2.5">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input type="text" id="brawlerSearch" placeholder="Search brawlers..."
+                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400">
+            </div>
+
+            <!-- Class Tabs -->
+            <div class="flex gap-1 flex-wrap justify-center pb-0.5 text-[10px] font-bold" id="classTabs"></div>
+
+            <!-- Trait Legend -->
+            <div class="flex items-center gap-2 flex-wrap text-[9px] font-bold text-slate-400">
+                <span>⭐ <span class="text-amber-400">Good Hyper</span></span>
+                <span>=J <span class="text-red-400">Knockback/Stun</span></span>
+                <span>🧱 <span class="text-green-400">Wall Break</span></span>
+                <span>➶ <span class="text-indigo-400">Pierce Damage</span></span>
+                <span>⚙️ <span class="text-cyan-400">Support</span></span>
+            </div>
+
+            <div id="brawlersGrid" class="space-y-3"></div>
+        </section>
+
+            </div><!-- /right column -->
+        </div><!-- /responsive columns -->
+    </main>
+
+    <!-- APP DATA: brawlers per Bobby's "Role & Ability Map" infographic -->
+    <script>
+        const CLASS_META = {
+            // Definitions encoded from Bobby's Part 2 archetype breakdowns.
+            'ANTI_TANK':   { label: 'Anti-Tank',  hex: '#e2e8f0', tip: 'Huge burst in <1s + stun/mute/knockback. Best first pick in aggressive modes.' },
+            'SPACE_MAKER': { label: 'Space Maker', hex: '#22c55e', tip: 'Dash/teleport mobility. Takes 2 enemies to kill; splits focus. Pick turns 4-5.' },
+            'CONTROL':     { label: 'Control',     hex: '#67e8f9', tip: 'No reliable stun, but holds space & locks out mid-range. Good 2/3 pick.' },
+            'SNIPER':      { label: 'Sniper',      hex: '#a3e635', tip: 'Range. Passive modes; pure snipers fear space makers; utility snipers flex.' },
+            'TANK':        { label: 'Tank',        hex: '#f87171', tip: 'Fat HP pool, no gap closer. Beats low-damage comps; dies to throwers/snipers.' },
+            'SUPPORT':     { label: 'Support',     hex: '#c084fc', tip: 'Speed/heal/teleport utility — not the win condition; needs a damage partner.' },
+            'THROWER':     { label: 'Thrower',     hex: '#fbbf24', tip: 'Shots over walls. Last-pick only; dies to aggro; weak in thrower mirrors.' }
+        };
+        // Class -> default mode affinity (mode ids). Brawler can override with `modes`.
+        const CLASS_MODES = {
+            'ANTI_TANK':   ['bb', 'gg', 'hz', 'heist'],
+            'SPACE_MAKER': ['bb', 'gg', 'hz', 'heist'],
+            'TANK':        ['bb', 'hz', 'heist'],
+            'CONTROL':     ['bb', 'gg', 'hz'],
+            'SNIPER':      ['gg', 'ko', 'bounty'],
+            'SUPPORT':     ['bb', 'gg', 'hz', 'heist', 'ko', 'bounty'],
+            'THROWER':     ['ko', 'bounty']
+        };
+
+        // Labels follow the cheat-sheet legend: Good Hyper, Knockback/Stun, Wall Break, Pierce Damage, Support (was "Special").
+        const TRAIT_META = {
+            'HYPER':   { hex: '#fbbf24', label: 'Good Hyper' },
+            'KB':      { hex: '#f87171', label: 'Knockback/Stun' },
+            'WALLBREAK': { hex: '#4ade80', label: 'Wall Break' },
+            'PIERCE':  { hex: '#818cf8', label: 'Pierce Damage' },
+            'SPECIAL': { hex: '#67e8f9', label: 'Support' }
+        };
+
+        const GAMEMODES = [
+            { id: 'bb', name: '🏀 Brawl Ball', meta: 'AGGRO', maps: ['Backyard Bowl', 'Sneaky Fields', 'Super Beach'] },
+            { id: 'gg', name: '💎 Gem Grab', meta: 'AGGRO', maps: ['Last Stop', 'Hard Rock Mine'] },
+            { id: 'hz', name: '💥 Hot Zone', meta: 'AGGRO', maps: ['Dueling Beetles', 'Ring of Fire', 'Parallel Place'] },
+            { id: 'heist', name: '💰 Heist', meta: 'AGGRO', maps: ['Safe Zone', 'Hot Potato'] },
+            { id: 'ko', name: '🥊 Knockout', meta: 'PASSIVE', maps: ['Shooting Star', 'Goldarm Gulch'] },
+            { id: 'bounty', name: '⭐ Bounty', meta: 'PASSIVE', maps: ['Hideout', 'Layer Cake'] }
+        ];
+
+        // Map geometry: OPEN = long sightlines (range up, wall-picks down); CLOSED = wall-heavy (dive/throwers up);
+        // BUSHY = ambush maps. edge = classic map-specific strength picks. Geometry drives scoring, edges add a map bonus.
+        const MAP_META = {
+            'Backyard Bowl':  { geo: 'MIXED',  edge: ['tara', 'gene', 'sprout'] },
+            'Sneaky Fields':  { geo: 'CLOSED', edge: ['sandy', 'emz', 'buzz'] },
+            'Super Beach':    { geo: 'OPEN',   edge: ['piper', 'belle', 'angelo'] },
+            'Last Stop':      { geo: 'MIXED',  edge: ['carl', 'tick', 'moe'] },
+            'Hard Rock Mine': { geo: 'CLOSED', edge: ['moe', 'rico', 'buster'] },
+            'Dueling Beetles':{ geo: 'MIXED',  edge: ['emz', 'tara', 'sprout'] },
+            'Ring of Fire':   { geo: 'CLOSED', edge: ['mortis', 'kenji', 'emz'] },
+            'Parallel Place': { geo: 'OPEN',   edge: ['angelo', 'piper', 'rt'] },
+            'Safe Zone':      { geo: 'CLOSED', edge: ['tick', 'berry', 'barley'] },
+            'Hot Potato':     { geo: 'OPEN',   edge: ['piper', 'colt', 'pierce'] },
+            'Shooting Star':  { geo: 'OPEN',   edge: ['gray', 'nani', 'belle'] },
+            'Goldarm Gulch':  { geo: 'CLOSED', edge: ['bull', 'shade', 'cordelius'] },
+            'Hideout':        { geo: 'BUSHY',  edge: ['rosa', 'bull', 'buzz'] },
+            'Layer Cake':     { geo: 'MIXED',  edge: ['tara', 'tick', 'emz'] }
+        };
+
+        // DATA SCHEMA
+        //  cls: draft class (Bobby's 7). sub: PURE/UTILITY (snipers only, per video).
+        //  traits: HYPER | KB | WALLBREAK | PIERCE | SPECIAL
+        //  modes: optional override of CLASS_MODES.
+        //  counters: keys are OTHER brawler ids (this brawler beats them) or a mode id
+        //            (e.g. 'heist' = strong on that mode). Values = why-text.
+        const BRAWLERS = [
+            // ===== THROWER (11) =====
+            { id: 'barley', name: 'Barley', cls: 'THROWER', traits: ['HYPER'], counters: { shelly: 'Keeps away with pools', jacky: 'Safe behind walls', lou: 'Lou melts vs throwers — zones nothing through lobbed pools', moe: 'Lobbed shots ignore the drill zone' } },
+            { id: 'dynamike', name: 'Dyna', cls: 'THROWER', traits: ['KB', 'HYPER'], counters: { frank: 'Stun gadget behind walls', otis: 'Safe lob over walls', lou: 'Lou is very bad vs throwers', moe: 'Lobbed bombs ignore Moe', heist: 'Burst lobbed bombs = top Heist last pick' } },
+            { id: 'larry', name: 'Larry', cls: 'THROWER', traits: [] },
+            { id: 'tick', name: 'Tick', cls: 'THROWER', traits: [] },
+            { id: 'sprout', name: 'Sprout', cls: 'THROWER', traits: [], counters: { piper: 'Blocks line of sight with wall' } },
+            { id: 'grom', name: 'Grom', cls: 'THROWER', traits: [] },
+            { id: 'ziggy', name: 'Ziggy', cls: 'THROWER', traits: [] },
+            { id: 'sirius', name: 'Sirius', cls: 'THROWER', traits: [] },
+            { id: 'juju', name: 'Juju', cls: 'THROWER', traits: [] },
+            { id: 'willow', name: 'Willow', cls: 'THROWER', traits: ['SPECIAL'], modes: ['bb', 'hz'], tip: 'Anti-tank & dive threat' },
+            { id: 'berry', name: 'Berry', cls: 'THROWER', traits: ['SPECIAL'], modes: ['heist', 'hz'] },
+
+            // ===== TANK (10) =====
+            { id: 'trunk', name: 'Trunk', cls: 'TANK', traits: [] },
+            { id: 'draco', name: 'Draco', cls: 'TANK', traits: ['HYPER'], counters: { mortis: 'Dragon form overpowers', edgar: 'Dragon form survives burst' } },
+            { id: 'frank', name: 'Frank', cls: 'TANK', traits: ['WALLBREAK'], counters: { poco: 'Overpowers low DPS', byron: 'Traverses poison' } },
+            { id: 'fang', name: 'Fang', cls: 'TANK', traits: ['SPECIAL'], counters: { carl: 'Buffed Super destroys Carl lanes', byron: 'Dives Byron before heals tick' } },
+            { id: 'buster', name: 'Buster', cls: 'TANK', traits: [] },
+            { id: 'el_primo', name: 'Primo', cls: 'TANK', traits: [], counters: { bull: 'Suplex gadget cancel', frank: 'Cancels Super with jump' } },
+            { id: 'hank', name: 'Hank', cls: 'TANK', tip: 'Playable passive — even into anti-tanks, never run it down' },
+            { id: 'jacky', name: 'Jacky', cls: 'TANK', traits: [], counters: { mortis: 'Counter crush damages dash', edgar: 'Pulls & melts close-up' } },
+            { id: 'rosa', name: 'Rosa', cls: 'TANK', traits: [], counters: { mortis: 'Shield negates dashes', edgar: 'Shield absorbs burst' } },
+            { id: 'ash', name: 'Ash', cls: 'TANK', traits: [] },
+
+            // ===== SPACE MAKER / ASSASSIN (19) =====
+            { id: 'bull', name: 'Bull', cls: 'SPACE_MAKER', traits: ['HYPER'], counters: { edgar: 'Out-damages jump', mortis: '2 shotgun bursts kill' } },
+            { id: 'bibi', name: 'Bibi', cls: 'SPACE_MAKER', traits: [], counters: { frank: 'Home Run knockback cancels Super', edgar: 'Knocks away jump' } },
+            { id: 'ollie', name: 'Ollie', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'kenji', name: 'Kenji', cls: 'SPACE_MAKER', counters: { hank: 'Feeds Kenji hypercharges — each charge is a free kill', barley: 'Charges off Barley shots then dives' } },
+            { id: 'mortis', name: 'Mortis', cls: 'SPACE_MAKER', traits: ['HYPER'], counters: { dynamike: 'Dashes through explosives', barley: 'Dives safely', piper: 'Dashes under snipes', sprout: 'Bypasses walls' } },
+            { id: 'shade', name: 'Shade', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'mina', name: 'Mina', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'buzz', name: 'Buzz', cls: 'SPACE_MAKER', traits: ['KB'] },
+            { id: 'alli', name: 'Alli', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'carl', name: 'Carl', cls: 'SPACE_MAKER', traits: [], counters: { piper: 'Super dives snipers', brock: 'Survives rockets' } },
+            { id: 'edgar', name: 'Edgar', cls: 'SPACE_MAKER', traits: ['HYPER'], counters: { dynamike: 'Direct jump kill', barley: 'Direct jump kill', sprout: 'Jumps over walls' } },
+            { id: 'kaze', name: 'Kaze', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'lily', name: 'Lily', cls: 'SPACE_MAKER', traits: ['SPECIAL'] },
+            { id: 'mico', name: 'Mico', cls: 'SPACE_MAKER', traits: [], counters: { dynamike: 'Invulnerable jump over bombs', barley: 'Jumps over puddles', piper: 'Direct dive on snipers' } },
+            { id: 'sam', name: 'Sam', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'chuck', name: 'Chuck', cls: 'SPACE_MAKER', traits: ['SPECIAL'], counters: { heist: 'Dash loops melt the Heist safe' } },
+            { id: 'gigi', name: 'Gigi', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'melodie', name: 'Melodie', cls: 'SPACE_MAKER', traits: [] },
+            { id: 'darryl', name: 'Darryl', cls: 'SPACE_MAKER', traits: [] },
+
+            // ===== ANTI-TANK (26) =====
+            { id: 'chester', name: 'Chester', cls: 'ANTI_TANK', traits: ['HYPER'] },
+            { id: 'nita', name: 'Nita', cls: 'ANTI_TANK', traits: ['HYPER'], counters: { bull: 'Bear tanks shotgun', el_primo: 'Bear zones melee', kaze: 'Bear keeps Kaze off the objective — defense turns offense' } },
+            { id: 'moe', name: 'Moe', cls: 'ANTI_TANK', traits: [] },
+            { id: 'rico', name: 'Rico', cls: 'ANTI_TANK', traits: [], counters: { bull: 'Bounces shots in lanes', el_primo: 'Melts in tight walls' } },
+            { id: 'tara', name: 'Tara', cls: 'ANTI_TANK', traits: ['HYPER'], counters: { mortis: 'Shadows block dashes', edgar: 'Super pulls & melts' } },
+            { id: 'emz', name: 'Emz', cls: 'ANTI_TANK', traits: ['HYPER'], counters: { frank: 'Friendzone knockback', el_primo: 'Keeps tanks at range', draco: 'Friendzone pushes away' } },
+            { id: 'lou', name: 'Lou', cls: 'ANTI_TANK', traits: [] },
+            { id: 'finx', name: 'Finx', cls: 'ANTI_TANK', traits: [] },
+            { id: 'ruffs', name: 'Ruffs', cls: 'ANTI_TANK', traits: [] },
+            { id: 'sandy', name: 'Sandy', cls: 'ANTI_TANK', traits: ['HYPER'], counters: { piper: 'Sandstorm covers team gap' } },
+            { id: 'otis', name: 'Otis', cls: 'ANTI_TANK', traits: ['SPECIAL', 'KB'], modes: ['bb', 'gg', 'hz', 'ko', 'bounty'], counters: { frank: 'Mutes Super windup', draco: 'Mutes Dragon form', edgar: 'Mutes jump landing', mortis: 'Mutes dash attack' } },
+            { id: 'lumi', name: 'Lumi', cls: 'ANTI_TANK', traits: ['KB'] },
+            { id: 'shelly', name: 'Shelly', cls: 'ANTI_TANK', traits: ['KB'], counters: { mortis: 'Instant Super blast', edgar: 'Super cancels landing', frank: 'Super stuns & cancels' } },
+            { id: 'surge', name: 'Surge', cls: 'ANTI_TANK', traits: [] },
+            { id: 'charlie', name: 'Charlie', cls: 'ANTI_TANK', traits: [] },
+            { id: 'gale', name: 'Gale', cls: 'ANTI_TANK', traits: ['KB'], counters: { mortis: 'Twister gadget blocks dash', edgar: 'Super pushes away', frank: 'Stuns against walls', el_primo: 'Hard stops jump' } },
+            { id: 'spike', name: 'Spike', cls: 'ANTI_TANK', traits: [], counters: { frank: 'Life plant blocks & melts', bull: 'Curveball kites tanks' } },
+            { id: 'cordelius', name: 'Cord', cls: 'ANTI_TANK', traits: ['SPECIAL'], counters: { frank: 'Shadow realm mutes Super', draco: 'Shadow realm steals dragon form' } },
+            { id: 'maisie', name: 'Maisie', cls: 'ANTI_TANK', traits: ['KB'], counters: { bull: 'Dash-stun stops the Bull push', kaze: 'Out-zones Kaze off the objective' }, tip: 'Defense into offense: hypercharge shreds for % from range' },
+            { id: 'colt', name: 'Colt', cls: 'ANTI_TANK', traits: ['WALLBREAK', 'PIERCE'], counters: { frank: 'Melts huge HP bar', '8bit': 'Out-maneuvers slow speed' } },
+            { id: 'griff', name: 'Griff', cls: 'ANTI_TANK', traits: [], counters: { frank: 'Melts huge HP with Super', el_primo: 'Point blank cards obliterate' } },
+            { id: 'crow', name: 'Crow', cls: 'ANTI_TANK', traits: ['SPECIAL'], counters: { poco: 'Poison stops healing', byron: 'Poison reduces healing', barley: 'Anti-heal pressure overwhelms Barley sustain', jae_yong: 'Poison cuts the healer sustain' }, tip: 'Anti-healer — best vs heal comps (Barley/Jae-Yong); run the lower-heal star power into heals' },
+            { id: '8bit', name: '8-Bit', cls: 'ANTI_TANK', traits: [] },
+            { id: 'clancy', name: 'Clancy', cls: 'ANTI_TANK', traits: [] },
+            { id: 'colette', name: 'Colette', cls: 'ANTI_TANK', traits: [], counters: { frank: '% HP damage shreds HP', meg: 'Melts mech in 2 shots', draco: 'Melts dragon form', el_primo: '% HP damage' } },
+            { id: 'meg', name: 'Meg', cls: 'ANTI_TANK', traits: [], counters: { mortis: 'Mech HP absorbs dashes', edgar: 'Mech out-sustains' } },
+
+            // ===== SUPPORT (7) =====
+            { id: 'kit', name: 'Kit', cls: 'SUPPORT', traits: ['HYPER'], counters: { piper: 'Invisible jump locks sniper' } },
+            { id: 'max', name: 'Max', cls: 'SUPPORT', traits: [], counters: { frank: 'Out-speed Super windup', dynamike: 'Dodges bombs easily' } },
+            { id: 'gray', name: 'Gray', cls: 'SUPPORT', counters: { carl: 'Super teleports right onto Carl', byron: 'Teleport lands on Byron — nothing he can do' }, tip: 'Gray always works on Shooting Star-type maps' },
+            { id: 'poco', name: 'Poco', cls: 'SUPPORT', traits: ['HYPER'], counters: { crow: 'Heals off poison tick', gene: 'Scream gadget clears CC' } },
+            { id: 'jae_yong', name: 'Jae-Yong', cls: 'SUPPORT', traits: [] },
+            { id: 'doug', name: 'Doug', cls: 'SUPPORT', traits: ['SPECIAL'] },
+            { id: 'glowy', name: 'Glowy', cls: 'SUPPORT', traits: [] },
+
+            // ===== SNIPER (11): sub = PURE vs UTILITY (video rule) =====
+            { id: 'mandy', name: 'Mandy', cls: 'SNIPER', sub: 'PURE', traits: ['HYPER'] },
+            { id: 'rt', name: 'RT', cls: 'SNIPER', sub: 'UTILITY', traits: [] },
+            { id: 'gus', name: 'Gus', cls: 'SNIPER', sub: 'UTILITY', traits: ['KB'], counters: { mortis: 'Knockback shield gadget', edgar: 'Shield absorbs jump' } },
+            { id: 'piper', name: 'Piper', cls: 'SNIPER', sub: 'PURE', traits: ['KB', 'HYPER'], counters: { frank: 'Outranges & knockback', shelly: 'Far outranges' } },
+            { id: 'brock', name: 'Brock', cls: 'SNIPER', sub: 'PURE', traits: ['WALLBREAK', 'HYPER'] },
+            { id: 'byron', name: 'Byron', cls: 'SNIPER', sub: 'UTILITY', traits: ['SPECIAL'], counters: { crow: 'Malignant potion stops heal' } },
+            { id: 'angelo', name: 'Angelo', cls: 'SNIPER', sub: 'UTILITY', traits: [], counters: { colette: 'Outranges from water', frank: 'Snipes safely across water' } },
+            { id: 'pierce', name: 'Pierce', cls: 'SNIPER', sub: 'UTILITY', traits: [] },
+            { id: 'nani', name: 'Nani', cls: 'SNIPER', sub: 'PURE', traits: [], counters: { piper: 'Return-to-sender reflects shot', angelo: 'Return-to-sender reflects shot' } },
+            { id: 'belle', name: 'Belle', cls: 'SNIPER', sub: 'UTILITY', traits: [], counters: { frank: 'Spotlight mark increases dmg', draco: 'Spotlight mark neutralizes HP' } },
+            { id: 'bea', name: 'Bea', cls: 'SNIPER', sub: 'PURE', traits: [], counters: { frank: 'Charged honey shot shreds', meg: 'Slows & melts mech' } },
+
+            // ===== CONTROL (17) =====
+            { id: 'amber', name: 'Amber', cls: 'CONTROL', traits: [], counters: { frank: 'Continuous fire melts HP', edgar: 'Fire dancing gadget' } },
+            { id: 'meeple', name: 'Meeple', cls: 'CONTROL', traits: [] },
+            { id: 'leon', name: 'Leon', cls: 'CONTROL', traits: ['SPECIAL'], counters: { piper: 'Invisibility sneaks up', angelo: 'Invisibility catches charge' } },
+            { id: 'pam', name: 'Pam', cls: 'CONTROL', traits: [], counters: { mortis: 'Scrapturret sucks ammo', edgar: 'Knockback gadget' } },
+            { id: 'bo', name: 'Bo', cls: 'CONTROL', traits: ['KB'], counters: { edgar: 'Mine knockback cancels jump', mortis: 'Mines block dashes' } },
+            { id: 'pearl', name: 'Pearl', cls: 'CONTROL', traits: [] },
+            { id: 'gene', name: 'Gene', cls: 'CONTROL', traits: [], counters: { piper: 'Pulls squishy snipers', crow: 'Knockback gadget cancels dive' } },
+            { id: 'stu', name: 'Stu', cls: 'CONTROL', traits: ['WALLBREAK'], counters: { frank: 'Endless knockback dashes', bull: 'Kites endlessly' } },
+            { id: 'janet', name: 'Janet', cls: 'CONTROL', traits: [] },
+            { id: 'penny', name: 'Penny', cls: 'CONTROL', traits: [], counters: { nita: 'Salty barrel splash', ash: 'Mortar destroys rats' } },
+            { id: 'jessie', name: 'Jessie', cls: 'CONTROL', traits: [], counters: { nita: 'Bounce shots off Bear', poco: 'Turret out-damages heals' } },
+            { id: 'squeak', name: 'Squeak', cls: 'CONTROL', traits: [] },
+            { id: 'eve', name: 'Eve', cls: 'CONTROL', traits: [] },
+            { id: 'lola', name: 'Lola', cls: 'CONTROL', traits: [] },
+            { id: 'naija', name: 'Naija', cls: 'CONTROL', traits: [] },
+            { id: 'bonnie', name: 'Bonnie', cls: 'CONTROL', traits: [] },
+            { id: 'mr_p', name: 'Mr. P', cls: 'CONTROL', traits: [] },
+
+            // ===== 2026 NEW-ERA ADDITIONS (not on Bobby's 101 cheat-sheet) =====
+            { id: 'bolt', name: 'Bolt', cls: 'TANK', traits: ['WALLBREAK'], counters: { piper: 'Rolls too fast to snipe', dynamike: 'Fast rolls dodge lobs', colt: 'Rolls through the lanes' } },
+            { id: 'damian', name: 'Damian', cls: 'TANK', traits: ['KB'], tip: 'Speaker bounce + knock-into-wall stuns; Wall of Sound zones' },
+            { id: 'wendy', name: 'Wendy', cls: 'SUPPORT', traits: [], tip: 'Shield generator absorbs team damage — strong 2nd half of heal comp' },
+            { id: 'nori', name: 'Nori', cls: 'SPACE_MAKER', traits: ['KB', 'WALLBREAK'], counters: { dynamike: 'Over-wall rod dive', barley: 'Over-wall rod dive', piper: 'Rod pull erases all range', berry: 'Rod pull erases all range' } },
+            { id: 'nova', name: 'Starr Nova', cls: 'SPACE_MAKER', traits: ['SPECIAL'], counters: { piper: 'Sword rush beats burst window', bea: 'Closes range before charged shot', byron: 'Hunts the healer' } },
+            { id: 'cosmo', name: 'Cosmo', cls: 'CONTROL', traits: ['KB'], counters: { mortis: 'Telescope Trap freezes dashes', edgar: 'Grounds the jump', moe: 'Trap freezes the drill dash', fang: 'Grounds the dive' } },
+            { id: 'vince', name: 'Vince', cls: 'CONTROL', traits: [], tip: 'Moth collection escalates — punish before it snowballs' }
+        ];
+
+        // Part 2: Bobby's current-meta top picks per class
+        const META5 = new Set([
+            // Anti-Tank: Otis, Crow, Colette, Chester, Moe
+            'otis', 'crow', 'colette', 'chester', 'moe',
+            // Control: Lumi, Naija, Gene, Stu, Leon
+            'lumi', 'naija', 'gene', 'stu', 'leon',
+            // Thrower: Sirius, Larry, Berry, Juju, Ziggy
+            'sirius', 'larry', 'berry', 'juju', 'ziggy',
+            // Sniper: Pierce, Angelo, Belle, Byron, Gus
+            'pierce', 'angelo', 'belle', 'byron', 'gus',
+            // Space Maker: Kaze, Shade, Alli, Mortis, Edgar
+            'kaze', 'shade', 'alli', 'mortis', 'edgar',
+            // Tank: Bull, Frank, Bibi, Fang, Rosa
+            'bull', 'frank', 'bibi', 'fang', 'rosa',
+            // Support: Max, Poco, Kit, Glowy
+            'max', 'poco', 'kit', 'glowy'
+        ]);
+
+        // Buffie roster (Supercell update waves: Colette/Leon/Edgar/Crow/Mortis → Rico/Brock/8-Bit/Meg/Max/Surge → Poco/El Primo/Amber/Gus/Chuck/Shade).
+        // Buffied brawlers have upgraded Gadgets, Star Powers and Hypercharges — flagged with 🧪 in the UI and a small pick bonus.
+        const BUFFIES = new Set([
+            'colette', 'leon', 'edgar', 'crow', 'mortis',
+            'rico', 'brock', '8bit', 'meg', 'max', 'surge',
+            'poco', 'el_primo', 'amber', 'gus', 'chuck', 'shade'
+        ]);
+
+        // Official brawler portraits via Brawlify's asset CDN (keyed by Supercell brawler id)
+        const ICONS = {
+            'barley': 'https://cdn.brawlify.com/brawlers/borderless/16000006.png',
+            'dynamike': 'https://cdn.brawlify.com/brawlers/borderless/16000009.png',
+            'larry': 'https://cdn.brawlify.com/brawlers/borderless/16000077.png',
+            'tick': 'https://cdn.brawlify.com/brawlers/borderless/16000022.png',
+            'sprout': 'https://cdn.brawlify.com/brawlers/borderless/16000037.png',
+            'grom': 'https://cdn.brawlify.com/brawlers/borderless/16000048.png',
+            'ziggy': 'https://cdn.brawlify.com/brawlers/borderless/16000098.png',
+            'sirius': 'https://cdn.brawlify.com/brawlers/borderless/16000102.png',
+            'juju': 'https://cdn.brawlify.com/brawlers/borderless/16000087.png',
+            'willow': 'https://cdn.brawlify.com/brawlers/borderless/16000067.png',
+            'berry': 'https://cdn.brawlify.com/brawlers/borderless/16000082.png',
+            'trunk': 'https://cdn.brawlify.com/brawlers/borderless/16000096.png',
+            'draco': 'https://cdn.brawlify.com/brawlers/borderless/16000080.png',
+            'frank': 'https://cdn.brawlify.com/brawlers/borderless/16000020.png',
+            'fang': 'https://cdn.brawlify.com/brawlers/borderless/16000054.png',
+            'buster': 'https://cdn.brawlify.com/brawlers/borderless/16000062.png',
+            'el_primo': 'https://cdn.brawlify.com/brawlers/borderless/16000010.png',
+            'hank': 'https://cdn.brawlify.com/brawlers/borderless/16000069.png',
+            'jacky': 'https://cdn.brawlify.com/brawlers/borderless/16000034.png',
+            'rosa': 'https://cdn.brawlify.com/brawlers/borderless/16000024.png',
+            'ash': 'https://cdn.brawlify.com/brawlers/borderless/16000051.png',
+            'bull': 'https://cdn.brawlify.com/brawlers/borderless/16000002.png',
+            'bibi': 'https://cdn.brawlify.com/brawlers/borderless/16000026.png',
+            'ollie': 'https://cdn.brawlify.com/brawlers/borderless/16000090.png',
+            'kenji': 'https://cdn.brawlify.com/brawlers/borderless/16000085.png',
+            'mortis': 'https://cdn.brawlify.com/brawlers/borderless/16000011.png',
+            'shade': 'https://cdn.brawlify.com/brawlers/borderless/16000086.png',
+            'mina': 'https://cdn.brawlify.com/brawlers/borderless/16000097.png',
+            'buzz': 'https://cdn.brawlify.com/brawlers/borderless/16000049.png',
+            'alli': 'https://cdn.brawlify.com/brawlers/borderless/16000095.png',
+            'carl': 'https://cdn.brawlify.com/brawlers/borderless/16000025.png',
+            'edgar': 'https://cdn.brawlify.com/brawlers/borderless/16000043.png',
+            'kaze': 'https://cdn.brawlify.com/brawlers/borderless/16000094.png',
+            'lily': 'https://cdn.brawlify.com/brawlers/borderless/16000081.png',
+            'mico': 'https://cdn.brawlify.com/brawlers/borderless/16000075.png',
+            'sam': 'https://cdn.brawlify.com/brawlers/borderless/16000060.png',
+            'chuck': 'https://cdn.brawlify.com/brawlers/borderless/16000073.png',
+            'gigi': 'https://cdn.brawlify.com/brawlers/borderless/16000100.png',
+            'melodie': 'https://cdn.brawlify.com/brawlers/borderless/16000078.png',
+            'darryl': 'https://cdn.brawlify.com/brawlers/borderless/16000018.png',
+            'chester': 'https://cdn.brawlify.com/brawlers/borderless/16000063.png',
+            'nita': 'https://cdn.brawlify.com/brawlers/borderless/16000008.png',
+            'moe': 'https://cdn.brawlify.com/brawlers/borderless/16000084.png',
+            'rico': 'https://cdn.brawlify.com/brawlers/borderless/16000004.png',
+            'tara': 'https://cdn.brawlify.com/brawlers/borderless/16000017.png',
+            'emz': 'https://cdn.brawlify.com/brawlers/borderless/16000030.png',
+            'lou': 'https://cdn.brawlify.com/brawlers/borderless/16000041.png',
+            'finx': 'https://cdn.brawlify.com/brawlers/borderless/16000092.png',
+            'ruffs': 'https://cdn.brawlify.com/brawlers/borderless/16000044.png',
+            'sandy': 'https://cdn.brawlify.com/brawlers/borderless/16000028.png',
+            'otis': 'https://cdn.brawlify.com/brawlers/borderless/16000059.png',
+            'lumi': 'https://cdn.brawlify.com/brawlers/borderless/16000091.png',
+            'shelly': 'https://cdn.brawlify.com/brawlers/borderless/16000000.png',
+            'surge': 'https://cdn.brawlify.com/brawlers/borderless/16000038.png',
+            'charlie': 'https://cdn.brawlify.com/brawlers/borderless/16000074.png',
+            'gale': 'https://cdn.brawlify.com/brawlers/borderless/16000035.png',
+            'spike': 'https://cdn.brawlify.com/brawlers/borderless/16000005.png',
+            'cordelius': 'https://cdn.brawlify.com/brawlers/borderless/16000070.png',
+            'maisie': 'https://cdn.brawlify.com/brawlers/borderless/16000068.png',
+            'colt': 'https://cdn.brawlify.com/brawlers/borderless/16000001.png',
+            'griff': 'https://cdn.brawlify.com/brawlers/borderless/16000050.png',
+            'crow': 'https://cdn.brawlify.com/brawlers/borderless/16000012.png',
+            '8bit': 'https://cdn.brawlify.com/brawlers/borderless/16000027.png',
+            'clancy': 'https://cdn.brawlify.com/brawlers/borderless/16000083.png',
+            'colette': 'https://cdn.brawlify.com/brawlers/borderless/16000039.png',
+            'meg': 'https://cdn.brawlify.com/brawlers/borderless/16000052.png',
+            'kit': 'https://cdn.brawlify.com/brawlers/borderless/16000076.png',
+            'max': 'https://cdn.brawlify.com/brawlers/borderless/16000032.png',
+            'gray': 'https://cdn.brawlify.com/brawlers/borderless/16000064.png',
+            'poco': 'https://cdn.brawlify.com/brawlers/borderless/16000013.png',
+            'jae_yong': 'https://cdn.brawlify.com/brawlers/borderless/16000093.png',
+            'doug': 'https://cdn.brawlify.com/brawlers/borderless/16000071.png',
+            'glowy': 'https://cdn.brawlify.com/brawlers/borderless/16000101.png',
+            'mandy': 'https://cdn.brawlify.com/brawlers/borderless/16000065.png',
+            'rt': 'https://cdn.brawlify.com/brawlers/borderless/16000066.png',
+            'gus': 'https://cdn.brawlify.com/brawlers/borderless/16000061.png',
+            'piper': 'https://cdn.brawlify.com/brawlers/borderless/16000015.png',
+            'brock': 'https://cdn.brawlify.com/brawlers/borderless/16000003.png',
+            'byron': 'https://cdn.brawlify.com/brawlers/borderless/16000042.png',
+            'angelo': 'https://cdn.brawlify.com/brawlers/borderless/16000079.png',
+            'pierce': 'https://cdn.brawlify.com/brawlers/borderless/16000099.png',
+            'nani': 'https://cdn.brawlify.com/brawlers/borderless/16000036.png',
+            'belle': 'https://cdn.brawlify.com/brawlers/borderless/16000046.png',
+            'bea': 'https://cdn.brawlify.com/brawlers/borderless/16000029.png',
+            'amber': 'https://cdn.brawlify.com/brawlers/borderless/16000040.png',
+            'meeple': 'https://cdn.brawlify.com/brawlers/borderless/16000089.png',
+            'leon': 'https://cdn.brawlify.com/brawlers/borderless/16000023.png',
+            'pam': 'https://cdn.brawlify.com/brawlers/borderless/16000016.png',
+            'bo': 'https://cdn.brawlify.com/brawlers/borderless/16000014.png',
+            'pearl': 'https://cdn.brawlify.com/brawlers/borderless/16000072.png',
+            'gene': 'https://cdn.brawlify.com/brawlers/borderless/16000021.png',
+            'stu': 'https://cdn.brawlify.com/brawlers/borderless/16000045.png',
+            'janet': 'https://cdn.brawlify.com/brawlers/borderless/16000057.png',
+            'penny': 'https://cdn.brawlify.com/brawlers/borderless/16000019.png',
+            'jessie': 'https://cdn.brawlify.com/brawlers/borderless/16000007.png',
+            'squeak': 'https://cdn.brawlify.com/brawlers/borderless/16000047.png',
+            'eve': 'https://cdn.brawlify.com/brawlers/borderless/16000056.png',
+            'lola': 'https://cdn.brawlify.com/brawlers/borderless/16000053.png',
+            'naija': 'https://cdn.brawlify.com/brawlers/borderless/16000103.png',
+            'bolt': 'https://cdn.brawlify.com/brawlers/borderless/16000106.png',
+            'damian': 'https://cdn.brawlify.com/brawlers/borderless/16000104.png',
+            'wendy': 'https://cdn.brawlify.com/brawlers/borderless/16000108.png',
+            'nori': 'https://cdn.brawlify.com/brawlers/borderless/16000107.png',
+            'nova': 'https://cdn.brawlify.com/brawlers/borderless/16000105.png',
+            'cosmo': 'https://cdn.brawlify.com/brawlers/borderless/16000109.png',
+            'vince': 'https://cdn.brawlify.com/brawlers/borderless/16000110.png',
+            'bonnie': 'https://cdn.brawlify.com/brawlers/borderless/16000058.png',
+            'mr_p': 'https://cdn.brawlify.com/brawlers/borderless/16000031.png'
+        };
+    </script>
+
+    <!-- JS Logic -->
+    <script>
+        // APP STATE
+        let state = {
+            mode: 'bb',
+            map: 'Backyard Bowl',
+            slot: '1',
+            coin: 'lose',
+            target: 'you',
+            yourPicks: [null, null, null],
+            enemyPicks: [null, null, null],
+            bans: [null, null, null, null, null, null],
+            classFilter: 'ALL',
+            searchQuery: ''
+        };
+
+        const byId = id => BRAWLERS.find(b => b.id === id) || null;
+
+        // Portrait avatar: official icon overlaying the class-colored chip; initials show until the image loads (or if it fails).
+        function avatarHTML(b, size) {
+            const mm = CLASS_META[b.cls];
+            const init = b.name.substring(0, 2).toUpperCase();
+            const icon = ICONS[b.id];
+            return `<div class="relative ${size} rounded-lg overflow-hidden text-slate-950 font-brawl flex items-center justify-center text-xs shadow" style="background:${mm.hex}">${init}${icon ? `<img src="${icon}" alt="${b.name}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">` : ''}</div>`;
+        }
+
+        // INITIALIZATION
+        window.onload = function () {
+            renderModeSelect();
+            renderMapSelect();
+            renderClassTabs();
+            renderTargetButtons();
+            recompute();
+            document.getElementById('brawlerSearch').addEventListener('input', (e) => {
+                state.searchQuery = e.target.value.toLowerCase();
+                renderBrawlers();
+            });
+        };
+
+        function renderModeSelect() {
+            const sel = document.getElementById('modeSelect');
+            sel.innerHTML = GAMEMODES.map(m =>
+                `<option value="${m.id}" ${state.mode === m.id ? 'selected' : ''}>${m.name}</option>`
+            ).join('');
+        }
+
+        function renderMapSelect() {
+            const sel = document.getElementById('mapSelect');
+            const g = GAMEMODES.find(m => m.id === state.mode);
+            sel.innerHTML = g.maps.map(m =>
+                `<option value="${m}" ${state.map === m ? 'selected' : ''}>${m}</option>`
+            ).join('');
+        }
+
+        function renderMetaBadge() {
+            const g = GAMEMODES.find(m => m.id === state.mode);
+            const badge = document.getElementById('metaBadge');
+            const aggro = g.meta === 'AGGRO';
+            badge.textContent = aggro ? '⚔️ Aggressive meta' : '🛡️ Passive meta';
+            badge.className = `text-[9px] font-bold px-2 py-1 rounded-full uppercase border whitespace-nowrap ${aggro
+                ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                : 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40'}`;
+        }
+
+        function onModeChange() {
+            state.mode = document.getElementById('modeSelect').value;
+            state.map = GAMEMODES.find(m => m.id === state.mode).maps[0];
+            renderMapSelect();
+            recompute();
+        }
+
+        function onMapChange() {
+            state.map = document.getElementById('mapSelect').value;
+            recompute();
+        }
+
+        function onSlotChange() {
+            state.slot = document.getElementById('slotSelect').value;
+            recompute();
+        }
+
+        function onCoinChange() {
+            state.coin = document.getElementById('coinSelect').value;
+            recompute();
+        }
+
+        function setTarget(t) {
+            state.target = t;
+            renderTargetButtons();
+            recompute();
+        }
+
+        function renderTargetButtons() {
+            const you = document.getElementById('targetYou');
+            const enemy = document.getElementById('targetEnemy');
+            const banBtn = document.getElementById('targetBan');
+            const base = 'target-btn touch-btn text-[9px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider';
+            const off = 'bg-slate-800 text-slate-400 border-slate-700';
+            // Consistent identity colors: blue = you, red = enemy, grey = bans
+            you.className = `${base} ${state.target === 'you' ? 'bg-blue-500 text-white border-blue-300' : off}`;
+            enemy.className = `${base} ${state.target === 'enemy' ? 'bg-red-500 text-white border-red-300' : off}`;
+            if (banBtn) banBtn.className = `${base} ${state.target === 'ban' ? 'bg-slate-500 text-white border-slate-300' : off}`;
+        }
+
+        function slotHTML(pickId, idx, zone) {
+            const b = pickId ? byId(pickId) : null;
+            const focused = state.focus === `${zone}${idx}`;
+            if (b) {
+                return `
+                <button onclick="cycleSlot('${zone}',${idx})" title="${b.name}" class="touch-btn relative w-14 h-14 rounded-xl overflow-hidden border-2 bg-slate-950 shadow-lg ${zone === 'you' ? 'border-blue-300/90 shadow-[0_0_10px_rgba(59,130,246,0.45)]' : 'border-red-300/90 shadow-[0_0_10px_rgba(239,68,68,0.45)]'}">
+                    <div class="absolute inset-0" style="background:${CLASS_META[b.cls].hex}"></div>
+                    ${ICONS[b.id] ? `<img src="${ICONS[b.id]}" alt="${b.name}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">` : ''}
+                    <span onclick="event.stopPropagation(); clearSlot('${zone}',${idx})" class="absolute -top-1 -right-1 bg-${zone === 'you' ? 'blue' : 'red'}-500 text-white w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shadow z-10">×</span>
+                </button>`;
+            }
+            return `
+                <button onclick="focusSlot('${zone}',${idx})" title="Tap to set slot ${idx + 1}" class="touch-btn w-14 h-14 rounded-xl border-2 border-dashed flex items-center justify-center ${zone === 'you'
+                    ? (focused ? 'border-blue-300 bg-blue-400/25 text-blue-200' : 'border-blue-400/40 text-blue-200/40')
+                    : (focused ? 'border-red-300 bg-red-400/25 text-red-200' : 'border-red-400/40 text-red-200/40')}">
+                    <i class="fa-solid fa-plus text-sm"></i>
+                </button>`;
+        }
+
+        function renderSlots() {
+            const yc = document.getElementById('arenaYours');
+            const ec = document.getElementById('arenaFoes');
+            if (yc) yc.innerHTML = state.yourPicks.map((p, i) => slotHTML(p, i, 'you')).join('');
+            if (ec) ec.innerHTML = state.enemyPicks.map((p, i) => slotHTML(p, i, 'enemy')).join('');
+        }
+
+        function focusSlot(zone, idx) {
+            state.target = zone;
+            state.focus = `${zone}${idx}`;
+            renderTargetButtons();
+            renderSlots();
+        }
+
+        function clearSlot(zone, idx) {
+            if (zone === 'ban') {
+                state.bans[idx] = null;
+                state.target = 'ban';
+            } else {
+                state[zone === 'you' ? 'yourPicks' : 'enemyPicks'][idx] = null;
+            }
+            recompute();
+        }
+
+        function cycleSlot(zone, idx) {
+            // tap a filled slot to select it (then next pick replaces it)
+            state.target = zone;
+            state.focus = `${zone}${idx}`;
+            renderTargetButtons();
+            renderSlots();
+        }
+
+        function pickBrawler(brawlerId) {
+            const zone = state.target;
+            if (zone === 'ban') {
+                if (state.bans.includes(brawlerId)) return;
+                let idx = state.focus && state.focus.startsWith('ban') ? parseInt(state.focus.slice(3), 10) : -1;
+                if (idx === -1) idx = state.bans.findIndex(p => p === null);
+                if (idx === -1) return; // all 6 ban slots used
+                state.bans[idx] = brawlerId;
+                state.focus = null;
+                const nxt = state.bans.findIndex(p => p === null);
+                if (nxt !== -1) { state.focus = `ban${nxt}`; }
+                recompute();
+                return;
+            }
+            const key = zone === 'you' ? 'yourPicks' : 'enemyPicks';
+            if (state.bans.includes(brawlerId) || state.yourPicks.includes(brawlerId) || state.enemyPicks.includes(brawlerId)) return;
+            let slotIdx = -1;
+            if (state.focus && state.focus.startsWith(zone)) {
+                slotIdx = parseInt(state.focus.slice(zone.length), 10);
+            } else {
+                slotIdx = state[key].findIndex(p => p === null);
+            }
+            if (slotIdx === -1) return; // team full
+            state[key][slotIdx] = brawlerId;
+            state.focus = null;
+            // advance to next empty slot on same team
+            const nxt = state[key].findIndex(p => p === null);
+            if (nxt !== -1) { state.focus = `${zone}${nxt}`; }
+            recompute();
+        }
+
+        function setClassFilter(cls) {
+            state.classFilter = cls;
+            renderClassTabs();
+            renderBrawlers();
+        }
+
+        function renderClassTabs() {
+            // Cheat-sheet left-to-right group order
+            const order = ['ALL', 'THROWER', 'TANK', 'SPACE_MAKER', 'ANTI_TANK', 'SUPPORT', 'SNIPER', 'CONTROL'];
+            const counts = {};
+            BRAWLERS.forEach(b => counts[b.cls] = (counts[b.cls] || 0) + 1);
+            const el = document.getElementById('classTabs');
+            el.innerHTML = order.map(key => {
+                const isActive = state.classFilter === key;
+                const hex = key === 'ALL' ? '#fbbf24' : CLASS_META[key].hex;
+                const label = key === 'ALL' ? 'ALL' : CLASS_META[key].label.toUpperCase();
+                const count = key === 'ALL' ? BRAWLERS.length : counts[key] || 0;
+                return `<button onclick="setClassFilter('${key}')" class="rarity-tab touch-btn px-2.5 py-1 rounded-lg whitespace-nowrap border ${isActive ? 'border-amber-400' : 'border-slate-800 bg-slate-800'}" style="color:${hex}">${label} (${count})</button>`;
+            }).join('');
+        }
+
+        function renderBrawlers() {
+            const container = document.getElementById('brawlersGrid');
+            const taken = new Set([...state.yourPicks, ...state.enemyPicks, ...state.bans].filter(Boolean));
+            const filtered = BRAWLERS.filter(b => {
+                const matchesClass = state.classFilter === 'ALL' || b.cls === state.classFilter;
+                const matchesSearch = b.name.toLowerCase().includes(state.searchQuery);
+                return matchesClass && matchesSearch;
+            });
+            const classOrder = ['THROWER', 'TANK', 'SPACE_MAKER', 'ANTI_TANK', 'SUPPORT', 'SNIPER', 'CONTROL'];
+            let html = '';
+            classOrder.forEach(clsKey => {
+                const group = filtered.filter(b => b.cls === clsKey);
+                if (!group.length) return;
+                const meta = CLASS_META[clsKey];
+                html += `
+                <div>
+                    <div class="text-[10px] font-brawl tracking-wider uppercase mb-1 flex items-center gap-1" style="color:${meta.hex}">
+                        <span class="w-1.5 h-1.5 rounded-full" style="background:${meta.hex}"></span>
+                        ${meta.label} (${group.length})
+                    </div>
+                    <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1">
+                        ${group.map(b => {
+                            const isTaken = taken.has(b.id);
+                            const mm = CLASS_META[b.cls];
+                            const traits = (b.traits || []).filter(t => TRAIT_META[t])
+                                .map(t => `<span title="${TRAIT_META[t].label}" class="w-1.5 h-1.5 rounded-full" style="background:${TRAIT_META[t].hex}"></span>`).join('');
+                            return `
+                            <button onclick="pickBrawler('${b.id}')" ${isTaken ? 'disabled' : ''}
+                                    class="touch-btn p-1.5 rounded-xl bg-slate-950 border flex flex-col items-center justify-center relative ${isTaken ? 'opacity-25' : 'hover:scale-105'}" style="border-color:${mm.hex}66">
+                                ${BUFFIES.has(b.id) ? '<span title="Buffie upgrades: Gadget / Star Power / Hypercharge boosts" class="absolute -top-1 -right-0.5 text-[10px] leading-none">🧪</span>' : ''}
+                                ${avatarHTML(b, 'w-7 h-7')}
+                                <span class="text-[9px] font-bold text-slate-200 truncate w-full text-center mt-0.5">${b.name}</span>
+                                <div class="flex gap-0.5 mt-0.5 h-1.5">${traits}</div>
+                            </button>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html || `<div class="text-xs text-slate-500 text-center py-4">No brawlers found</div>`;
+        }
+
+        // ============ BAN ENGINE (Part 2: coin-flip-based ban rules) ============
+        function banPicks() {
+            const g = GAMEMODES.find(m => m.id === state.mode);
+            const aggro = g.meta === 'AGGRO';
+            const pool = BRAWLERS.filter(b => !state.yourPicks.includes(b.id) && !state.enemyPicks.includes(b.id) && !state.bans.includes(b.id));
+            const meta = pool.filter(b => META5.has(b.id));
+            let ordered = [];
+
+            if (state.coin === 'lose') {
+                // Opponent has first pick: ban their three best first-pick brawlers on the map.
+                // Video update: aggro bans should also cover meta divers (Kaze/Shade class), not only anti-tanks.
+                if (aggro) {
+                    ordered = meta.filter(b => b.cls === 'ANTI_TANK' || b.cls === 'SPACE_MAKER')
+                        .map(b => ({ b, why: 'Their first pick: dominant meta anti-tank or diver' }));
+                } else {
+                    ordered = meta.filter(b => b.cls === 'CONTROL' || (b.cls === 'SNIPER' && b.sub === 'UTILITY'))
+                        .map(b => ({ b, why: 'Their first pick: passive-mode meta mainstay' }));
+                }
+            } else {
+                // We have first pick: NEVER ban top meta anti-tanks — that hands them the best pick.
+                const pivots = aggro
+                    ? meta.filter(b => b.cls === 'CONTROL' || b.cls === 'SPACE_MAKER')
+                    : meta.filter(b => (b.cls === 'SNIPER' && b.sub === 'UTILITY') || b.cls === 'CONTROL');
+                const cheese = meta.filter(b => b.cls === 'THROWER' || b.id === 'shade');
+                // Rule: ban one strong 2/3 pivot + the dangerous last-pick cheese first.
+                ordered = pivots.map(b => ({ b, why: 'Strong 2/3 pivot that rounds out their comps' }))
+                    .concat(cheese.map(b => ({ b, why: 'Dangerous last-pick cheese' })))
+                    .filter(p => p.b.cls !== 'ANTI_TANK');
+            }
+
+            const seen = new Set();
+            const out = [];
+            ordered.forEach(p => {
+                if (!seen.has(p.b.id) && out.length < 3) { seen.add(p.b.id); out.push(p); }
+            });
+            return out;
+        }
+
+        // ============ VS BOARD (odds + lane matchups — our engine, Prodigy-style layout) ============
+        function laneMatchup(y, e, g) {
+            if (!y || !e) return { pct: 50, why: '' };
+            let pct = 50;
+            const why = [];
+            if (y.counters && y.counters[e.id]) { pct += 12; why.push(`${y.name} beats ${e.name}: ${y.counters[e.id]}`); }
+            if (e.counters && e.counters[y.id]) { pct -= 12; why.push(`${e.name} beats ${y.name}: ${e.counters[y.id]}`); }
+            const my = y.modes || CLASS_MODES[y.cls];
+            const em = e.modes || CLASS_MODES[e.cls];
+            if (my.includes(g.id)) pct += 3; else pct -= 2;
+            if (em.includes(g.id)) pct -= 3; else pct += 2;
+            if (y.cls === 'ANTI_TANK' && (e.cls === 'SPACE_MAKER' || e.cls === 'TANK')) { pct += 7; why.push('Anti-tank answers their aggression'); }
+            if (y.cls === 'THROWER' && (e.cls === 'SPACE_MAKER' || e.cls === 'TANK')) { pct -= 7; why.push('Their mobility punishes your thrower'); }
+            if (y.cls === 'SNIPER' && y.sub === 'PURE' && e.cls === 'SPACE_MAKER') { pct -= 8; why.push('Pure sniper loses the dive war'); }
+            if (e.cls === 'SNIPER' && e.sub === 'PURE' && y.cls === 'SPACE_MAKER') { pct += 8; why.push('Your dive hunts their sniper'); }
+            const mapm = MAP_META[state.map] || { geo: 'MIXED' };
+            if (mapm.geo === 'OPEN') {
+                if (y.cls === 'SNIPER') pct += 3;
+                if (e.cls === 'SNIPER') pct -= 2;
+                if (y.cls === 'THROWER') pct -= 2;
+            } else if (mapm.geo === 'CLOSED' || mapm.geo === 'BUSHY') {
+                if (y.cls === 'SPACE_MAKER') pct += 3;
+                if (e.cls === 'SPACE_MAKER') pct -= 3;
+            }
+            return { pct: Math.max(28, Math.min(74, Math.round(pct))), why: why.join(' • ') };
+        }
+
+        function renderVsBoard() {
+            const g = GAMEMODES.find(m => m.id === state.mode);
+            const y = state.yourPicks.map(byId);
+            const e = state.enemyPicks.map(byId);
+            const oddsEl = document.getElementById('vsOdds');
+            const lanes = [{ label: 'SIDE', i: 0 }, { label: 'MID', i: 1 }, { label: 'SIDE', i: 2 }];
+            const taken = new Set([...state.yourPicks, ...state.enemyPicks, ...state.bans].filter(Boolean));
+            // Best available counter-pick for an empty lane facing a locked enemy slot
+            const bestFor = e => {
+                let best = null, why = '', bestPct = -1;
+                BRAWLERS.forEach(b => {
+                    if (taken.has(b.id)) return;
+                    const m = laneMatchup(b, e, g);
+                    const p = m.pct + (BUFFIES.has(b.id) ? 2 : 0);
+                    if (p > bestPct) { best = b; why = m.why; bestPct = p; }
+                });
+                return best ? { b: best, why } : null;
+            };
+            const mini = (b, tone) => {
+                if (b) return avatarHTML(b, 'w-10 h-10');
+                if (tone === 'suggest') {
+                    return '<div class="w-10 h-10 rounded-lg ring-2 ring-amber-400 flex items-center justify-center text-amber-300 text-[8px] font-brawl">STAR</div>';
+                }
+                return `<div class="w-10 h-10 rounded-lg ${tone === 'you' ? 'bg-blue-900/40 border border-blue-500/40' : 'bg-red-900/40 border border-red-500/40'} flex items-center justify-center text-slate-600 text-[9px] font-brawl">TBD</div>`;
+            };
+            const chip = ['bg-blue-500/25 text-blue-200 border-blue-400/50', 'bg-amber-500/25 text-amber-200 border-amber-400/50', 'bg-violet-500/25 text-violet-200 border-violet-400/50'];
+            document.getElementById('vsLanes').innerHTML = lanes.map((L, li) => {
+                const yy = y[L.i], ee = e[L.i];
+                const decided = !!(yy && ee);
+                const best = (!yy && ee) ? bestFor(ee) : null;
+                const m = laneMatchup(yy, ee, g);
+                const tone = decided ? (m.pct >= 56 ? 'good' : m.pct <= 44 ? 'bad' : 'mid') : null;
+                const badgeBorder = tone === 'good' ? 'border-green-400' : tone === 'bad' ? 'border-red-400' : tone === 'mid' ? 'border-amber-400' : 'border-slate-600';
+                const badgeText = tone === 'good' ? 'text-green-300' : tone === 'bad' ? 'text-red-300' : tone === 'mid' ? 'text-amber-200' : 'text-slate-500';
+                const names = decided ? `${yy.name} vs ${ee.name}` : (ee ? `vs ${ee.name}` : (yy ? yy.name : 'open lane'));
+                return `<div class="bg-slate-950/70 rounded-xl p-2 flex flex-col items-center gap-1.5" title="${((decided ? m.why : '') || (best && best.why) || '').replace(/"/g, '&quot;')}">
+                    <span class="self-start text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${chip[li]}">${L.label}</span>
+                    ${best && !yy ? `<div class="relative" title="Suggested: ${best.b.name}${best.why ? ' — ' + best.why : ''}">${best.b ? mini(best.b) : ''}</div>` : mini(yy, 'you')}
+                    <div class="w-14 h-14 rounded-full border-2 ${badgeBorder} flex flex-col items-center justify-center leading-none">
+                        <span class="font-brawl text-[13px] ${badgeText}">${decided ? m.pct + '%' : (best ? '★' : '—')}</span>
+                        <span class="text-[7px] text-slate-500">VS</span>
+                    </div>
+                    ${mini(ee, 'foe')}
+                    <span class="text-[8px] font-bold ${best ? 'text-amber-300' : 'text-slate-400'} truncate w-full text-center">${best ? '★ ' + best.b.name : names}</span>
+                </div>`;
+            }).join('');
+            const allLocked = y.every(Boolean) && e.every(Boolean);
+            const lockedCount = y.filter(Boolean).length + e.filter(Boolean).length;
+            if (!allLocked) {
+                oddsEl.textContent = `${lockedCount}/6 locked`;
+                oddsEl.className = 'font-brawl text-sm px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap bg-slate-800/90 text-slate-300 border border-slate-600';
+                return;
+            }
+            const decidedLanes = lanes.filter(L => y[L.i] && e[L.i]);
+            const odds = Math.round(decidedLanes.reduce((s, L) => s + laneMatchup(y[L.i], e[L.i], g).pct, 0) / decidedLanes.length);
+            oddsEl.textContent = `Odds of winning: ${odds}%`;
+            oddsEl.className = 'font-brawl text-sm px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap bg-amber-400 text-slate-950 border border-amber-300';
+        }
+
+        function renderBanSlots() {
+            const el = document.getElementById('arenaBans');
+            if (!el) return;
+            el.innerHTML = state.bans.map((id, i) => {
+                const b = id ? byId(id) : null;
+                if (b) {
+                    // Grey ban chip: grayscale portrait over a slate base, Prodigy-style ban strip
+                    return `<button onclick="clearSlot('ban',${i})" class="touch-btn relative w-9 h-9 rounded-lg overflow-hidden border border-slate-300/70 shadow" title="Banned: ${b.name} — tap to un-ban">
+                        <div class="relative w-full h-full rounded-md overflow-hidden" style="background:#64748b">
+                            ${ICONS[b.id] ? `<img src="${ICONS[b.id]}" alt="${b.name}" class="absolute inset-0 w-full h-full object-cover grayscale" onerror="this.remove()">` : ''}
+                            <span class="absolute inset-0 bg-slate-900/40 pointer-events-none"></span>
+                        </div>
+                        <span class="absolute -top-1 -right-1 bg-slate-500 text-white w-3.5 h-3.5 rounded-full shadow">×</span>
+                    </button>`;
+                }
+                return `<button onclick="focusSlot('ban',${i})" title="Ban slot ${i + 1}" class="touch-btn w-9 h-9 rounded-lg border border-dashed ${state.focus === 'ban' + i ? 'border-slate-300 bg-slate-400/10 text-slate-300' : 'border-slate-500/60 bg-slate-900/70'} flex items-center justify-center text-slate-500 font-brawl text-[10px]">${i + 1}</button>`;
+            }).join('');
+        }
+
+        function renderBans() {            const el = document.getElementById('banList');
+            const picks = banPicks();
+            if (!picks.length) {
+                el.innerHTML = '<div class="text-[10px] text-slate-500">No meta ban targets available for this setup.</div>';
+                return;
+            }
+            const tag = why => why.indexOf('Strong 2/3') === 0 ? '2/3 PIVOT'
+                : why.indexOf('Dangerous') === 0 ? 'LAST-PICK CHEESE'
+                : why.indexOf('dominant') !== -1 ? 'FIRST-PICK THREAT (aggro)' : 'FIRST-PICK THREAT (passive)';
+            el.innerHTML = picks.map(p => {
+                const mm = CLASS_META[p.b.cls];
+                return `<div class="bg-slate-950 p-1.5 rounded-xl border border-slate-600/60 flex items-center gap-2">
+                    ${avatarHTML(p.b, 'w-6 h-6 shrink-0')}
+                    <div class="min-w-0">
+                        <span class="font-brawl text-[11px] text-slate-200">${p.b.name}</span>
+                        <span class="text-[8px] font-bold px-1 rounded bg-slate-400/20 text-slate-300 ml-1 uppercase">${tag(p.why)}</span>
+                        <div class="text-[9px] text-slate-400">${p.why}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ============ DRAFT ENGINE (rules from Bobby's draft guide) ============
+        function recompute() {
+            renderSlots();
+            renderBrawlers();
+            renderMetaBadge();
+            renderVsBoard();
+            renderBanSlots();
+            renderBans();
+            updateAdvice();
+        }
+
+        function classCounts(list) {
+            const c = {};
+            list.forEach(b => c[b.cls] = (c[b.cls] || 0) + 1);
+            return c;
+        }
+
+        function recommend() {
+            const g = GAMEMODES.find(m => m.id === state.mode);
+            const aggro = g.meta === 'AGGRO';
+            const band = state.slot;
+            const enemies = state.enemyPicks.filter(Boolean).map(byId);
+            const yours = state.yourPicks.filter(Boolean).map(byId);
+            const ec = classCounts(enemies);
+            const yc = classCounts(yours);
+            const taken = new Set([...state.yourPicks, ...state.enemyPicks, ...state.bans].filter(Boolean));
+            const healers = enemies.filter(e => e.cls === 'SUPPORT' || (e.cls === 'SNIPER' && e.sub === 'UTILITY')).length;
+            const mapm = MAP_META[state.map] || { geo: 'MIXED', edge: [] };
+            const recs = [];
+
+            BRAWLERS.forEach(b => {
+                if (taken.has(b.id)) return;
+                let score = 0, reasons = [], warns = [];
+                const add = (pts, why) => { score += pts; if (why && reasons.length < 4) reasons.push(why); };
+                const bad = (pts, why) => { score += pts; warns.push(why); };
+                if (BUFFIES.has(b.id)) add(5, 'Buffie-upgraded kit');
+
+                if (aggro) {
+                    if (band === '1') {
+                        // Open map — range keeps the anti-tank monopoly from being automatic
+                        const atFirst = (mapm.geo === 'OPEN') ? 82 : 100;
+                        if (b.cls === 'ANTI_TANK') add(atFirst, 'Best first pick: anti-tanks are the safest lock in aggressive modes');
+                        else if (b.cls === 'CONTROL') add(15, ' playable, but an anti-tank is usually the safer first lock');
+                    } else if (band === '23') {
+                        if (!ec['ANTI_TANK'] && b.cls === 'SPACE_MAKER') add(80, 'Enemy has no anti-tank yet — space makers punish that hard');
+                        if (b.cls === 'ANTI_TANK') add(55, 'Solid: secures your anti-tank answer');
+                        if (ec['TANK'] && b.cls === 'ANTI_TANK') add(25, 'Directly handles their tank pick');
+                    } else {
+                        // Dive their backline ONLY when their whole comp is passive — if they run their own dive threat, you need answers instead (Nita/Maisie quiz)
+                        if (!ec['ANTI_TANK'] && !ec['SPACE_MAKER'] && !ec['TANK']) {
+                            if (b.cls === 'SPACE_MAKER') add(85, 'Enemy comp is fully passive — dive their backline');
+                            if (b.cls === 'TANK') add(65, 'No enemy anti-tank in sight: high-HP tanks out-value');
+                        }
+                        if ((ec['SPACE_MAKER'] || ec['TANK']) && b.cls === 'ANTI_TANK') add(85, 'Shut down their aggressive picks');
+                        if (ec['SNIPER'] || ec['THROWER']) {
+                            if (b.cls === 'SPACE_MAKER') {
+                                // Video: when their comp is screened by 2+ anti-tanks, dive value drops — prefer lob range (Heist quiz)
+                                if ((ec['ANTI_TANK'] || 0) >= 2) add(20, 'Their anti-tank screen catches divers — think ranged instead');
+                                else add(80, 'Punish their passive sniper/thrower picks');
+                            }
+                        }
+                        // Heist object race: against a ground-bound comp, lobbed range melts the safe for free (Dyna > Barley quiz)
+                        if (state.mode === 'heist' && b.cls === 'THROWER' && !ec['SPACE_MAKER'] && !ec['TANK']) add(55, 'Heist object race: lobbed damage melts the safe');
+                    }
+                    if (state.mode === 'heist' && (b.traits || []).includes('HYPER')) add(20, 'Heist: high-impact hypercharge = safe damage on the safe');
+                } else { // PASSIVE: Knockout & Bounty
+                    if (band === '1') {
+                        if (b.cls === 'SNIPER') {
+                            if (b.sub === 'UTILITY') add(60, 'Utility snipers are the safest first picks in passive modes');
+                            else bad(-15, 'Pure snipers struggle into space makers — better saved for last');
+                        }
+                        if (b.cls === 'CONTROL') add(50, 'Well-rounded control holds lanes without dying to aggro');
+                        if (b.cls === 'ANTI_TANK') add(30, 'Decent here, even better in aggressive modes');
+                        if (b.cls === 'THROWER') bad(-80, 'Never first-pick throwers');
+                        if (b.cls === 'SPACE_MAKER') bad(-30, 'Aggressive picks get focused in passive modes');
+                    } else if (band === '23') {
+                        if (b.cls === 'SNIPER' && b.sub === 'UTILITY') add(45, 'High-value utility for the mid draft');
+                        if (b.cls === 'CONTROL') add(40, 'Great mid-draft control pick');
+                        if (b.cls === 'ANTI_TANK') add(35, 'Keeps your flex options open');
+                        if ((b.traits || []).includes('HYPER')) add(20, 'High-impact hypercharge adds mid-draft value');
+                    } else { // last picks
+                        if (!ec['SPACE_MAKER'] && !ec['ANTI_TANK'] && b.cls === 'THROWER') add(85, 'Counter-pick: enemy lacks anti-aggro — throwers take over the map');
+                        if (healers >= 2 && b.cls === 'TANK') add(45, 'Double sustain comp — you need real kill pressure (Fang over chip damage)');
+                        if (enemies.filter(e => e.cls === 'SNIPER' && e.sub === 'PURE').length >= 2 && b.cls === 'SPACE_MAKER') add(100, 'They stacked pure snipers — space makers run them over');
+                        if (ec['SPACE_MAKER'] && b.cls === 'ANTI_TANK') add(60, 'Survives their aggression and answers it');
+                        if (b.cls === 'CONTROL') add(25, 'Flexible close-out pick');
+                        if (b.cls === 'SNIPER') add(25, 'Flexible close-out pick');
+                    }
+                }
+
+                // Mode affinity
+                const modes = b.modes || CLASS_MODES[b.cls];
+                if (modes.includes(g.id)) add(20, null); else { score -= 12; }
+
+                // Map geometry weighting
+                if (mapm.geo === 'OPEN') {
+                    if (b.cls === 'SNIPER') add(14, 'Open map — range rules');
+                    if (b.cls === 'THROWER' || b.cls === 'TANK') bad(-12, 'Open map punishes wall-dependent picks');
+                } else if (mapm.geo === 'CLOSED' || mapm.geo === 'BUSHY') {
+                    if (b.cls === 'SPACE_MAKER') add(10, mapm.geo === 'BUSHY' ? 'Bushy map — ambushers thrive' : 'Wall-heavy map — dive thrives');
+                    if (b.cls === 'THROWER') add(8, 'Wall-heavy map: lobbed damage is stronger');
+                    if (b.cls === 'SNIPER' && b.sub === 'PURE') bad(-10, 'Closed map starves pure snipers');
+                }
+                if (mapm.edge.includes(b.id)) add(20, `Classic strength on ${state.map}`);
+
+                // Part 2: current-meta top picks get a flat push
+                if (META5.has(b.id)) add(25, 'Current meta: top-5 pick in its class');
+
+                // Direct counter pairs (this brawler beats locked enemies)
+                enemies.forEach(e => {
+                    if (b.counters && b.counters[e.id]) {
+                        score += 18;
+                        if (reasons.length < 4) reasons.push(`${b.name} — ${b.counters[e.id]}`);
+                    }
+                });
+                // Mode-keyed counters (e.g. Chuck on Heist)
+                if (b.counters && b.counters[g.id]) {
+                    score += 18;
+                    if (reasons.length < 4) reasons.push(`${b.counters[g.id]}`);
+                }
+
+                // Enemy counters this candidate
+                enemies.forEach(e => {
+                    if (e.counters && e.counters[b.id]) bad(-22, `${e.name} counters ${b.name}`);
+                });
+
+                // Class vulnerabilities from enemy composition
+                if (b.cls === 'THROWER' && (ec['SPACE_MAKER'] || ec['TANK'])) bad(-40, 'Enemy mobility punishes throwers');
+                if (b.cls === 'SNIPER' && b.sub === 'PURE' && ec['SPACE_MAKER']) bad(-45, 'Pure snipers get run down by space makers');
+
+                // Supports need a damage partner
+                if (b.cls === 'SUPPORT' && yours.length && !(yc['TANK'] || yc['ANTI_TANK'] || yc['SPACE_MAKER'] || yc['CONTROL'])) {
+                    bad(-25, 'Support needs a damage/dealer partner on your team');
+                }
+
+                // SnakeThug x Bobby video: don't stack the same role (no 2nd anti-tank next to your Lou)
+                const dup = (yc[b.cls] || 0);
+                if (dup >= 2) bad(-18, `Team already has 2 ${CLASS_META[b.cls].label}s — stop stacking the same role`);
+                else if (dup === 1 && (b.cls === 'ANTI_TANK' || b.cls === 'CONTROL' || b.cls === 'SUPPORT')) bad(-8, `Already have a ${CLASS_META[b.cls].label} — diversify roles`);
+
+                // A 3rd sniper invites the enemy thrower counter-pick (they still have their 6th pick)
+                if (band === '45' && b.cls === 'SNIPER' && (yc['SNIPER'] || 0) >= 2) bad(-25, 'A 3rd sniper invites the enemy thrower counter-pick');
+
+                // Double-support heal comp handling (healers computed above)
+                if (b.cls === 'THROWER' && healers >= 2) bad(-15, "Thrower can't close kills vs a double-support heal comp");
+
+                // First pick should be a safe all-rounder — ban-aware: how many counters are still available?
+                if (band === '1') {
+                    const threats = BRAWLERS.filter(o => o.id !== b.id && o.counters && o.counters[b.id] && !taken.has(o.id)).length;
+                    if (threats >= 5) bad(-10, `${threats} picks still counter it — risky first pick`);
+                    else if (threats <= 1) add(11, 'Ban-freed pick: almost no counters remain — safe all-rounder opener');
+                }
+
+                recs.push({ brawler: b, score, reasons: reasons.filter(Boolean), warns });
+            });
+
+            recs.sort((a, b) => b.score - a.score);
+            return { recs, aggro, band, enemies, yours, ec, yc, modeName: g.name, modeId: g.id };
+        }
+
+        function bandHint(aggro, band) {
+            if (aggro) {
+                if (band === '1') return 'First pick: best anti-tank';
+                if (band === '23') return 'Secure anti-tank / punish';
+                return 'Big picture: fill the gap';
+            }
+            if (band === '1') return 'Safe first pick (no throwers!)';
+            if (band === '23') return 'Utility & hyper-impact';
+            return 'Counter their blind spots';
+        }
+
+        function updateAdvice() {
+            const { recs, aggro, band, enemies, yours, ec, yc, modeName, modeId } = recommend();
+
+            document.getElementById('ruleHint').textContent = bandHint(aggro, band);
+
+            const list = document.getElementById('recommendationsList');
+            const top = recs.filter(r => r.score > 0).slice(0, 6);
+            if (!top.length) {
+                list.innerHTML = `<div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs text-amber-300 font-semibold">❓ No strong data pick yet — scores update live as picks lock. Default: solid Control/Sniper for the mode (see grid).</div>`;
+            } else {
+                // Descending score display (Prodigy-style): best pick normalized to 99, bars sized proportionally. Tap a row to lock the pick.
+                const best = top[0].score;
+                list.innerHTML = top.map((rec, i) => {
+                    const b = rec.brawler;
+                    const mm = CLASS_META[b.cls];
+                    const traits = (b.traits || []).map(t =>
+                        `<span class="text-[8px] font-bold px-1 rounded" style="color:${TRAIT_META[t].hex}">${TRAIT_META[t].label}</span>`).join(' ');
+                    const disp = Math.max(3, Math.min(99, Math.round(99 * rec.score / best)));
+                    const warnHTML = rec.warns.length
+                        ? `<div class="text-[9px] text-red-400 font-semibold mt-0.5 truncate">⚠️ ${rec.warns.slice(0, 2).join(' • ')}</div>` : '';
+                    return `
+                    <button onclick="pickBrawler('${b.id}')" class="w-full touch-btn text-left ${i === 0 ? 'glow-counter border-amber-400/80' : 'border-slate-800 hover:border-amber-400/40'} bg-slate-950 p-1.5 rounded-xl border flex items-center gap-2 shadow-lg">
+                        <div class="relative shrink-0">
+                            ${avatarHTML(b, 'w-10 h-10')}
+                            <span class="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-brawl flex items-center justify-center">${i + 1}</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1 flex-wrap mb-1">
+                                <span class="font-brawl text-[11px] text-amber-400">${b.name}</span>
+                                <span class="text-[8px] font-bold px-1 rounded" style="background:${mm.hex}22;color:${mm.hex}">${mm.label}</span>
+                                ${BUFFIES.has(b.id) ? '<span class="text-[9px]" title="Buffie upgrades">🧪</span>' : ''}
+                                ${traits}
+                            </div>
+                            <div class="relative h-5 rounded-md bg-slate-800 overflow-hidden">
+                                <div class="absolute inset-y-0 left-0 rounded-md" style="width:${disp}%;background:linear-gradient(90deg,#92600a,#fbbf24)"></div>
+                                <span class="absolute inset-0 flex items-center px-2 font-brawl text-[11px] ${disp >= 32 ? 'text-slate-950' : 'text-amber-200'} whitespace-nowrap">Score: ${disp}</span>
+                            </div>
+                            <div class="text-[9px] text-slate-200 font-semibold mt-1 truncate">${rec.reasons.slice(0, 2).join(' • ') || 'Solid situational pick'}</div>
+                            ${warnHTML}
+                        </div>
+                    </button>`;
+                }).join('');
+            }
+
+            // In Your Hand: what already counters each enemy pick
+            const counterList = document.getElementById('counterList');
+            if (!enemies.length) {
+                counterList.innerHTML = `<div class="text-slate-500">Lock an enemy to see counters in hand.</div>`;
+            } else {
+                counterList.innerHTML = enemies.map(e => {
+                    const inHand = yours.filter(y => y.counters && y.counters[e.id] && e.id);
+                    if (inHand.length) {
+                        return `<div>✅ <span class="text-green-400 font-bold">${inHand.map(y => y.name).join(', ')}</span> beat <span class="text-red-300">${e.name}</span></div>`;
+                    }
+                    return `<div>⚠️ <span class="text-slate-400">No dedicated counter yet for</span> <span class="text-red-300">${e.name}</span></div>`;
+                }).join('');
+            }
+
+            // Watch Out: enemy brawlers that counter your locked picks
+            const threatList = document.getElementById('threatList');
+            if (!enemies.length || !yours.length) {
+                threatList.innerHTML = `<div class="text-slate-500">Fill both sides to see threats.</div>`;
+            } else {
+                const notes = [];
+                enemies.forEach(e => {
+                    yours.forEach(y => {
+                        if (e.counters && e.counters[y.id]) notes.push(`⚠️ <span class="text-red-300">${e.name}</span> terrorizes your <span class="text-green-300">${y.name}</span>: ${e.counters[y.id]}`);
+                    });
+                });
+                threatList.innerHTML = notes.length ? notes.slice(0, 5).join('') : `<div class="text-slate-500">No direct threats found. ✅</div>`;
+            }
+        }
+
+        function resetAll() {
+            state.yourPicks = [null, null, null];
+            state.enemyPicks = [null, null, null];
+            state.target = 'you';
+            state.focus = null;
+            recompute();
+        }
+    </script>
+</body>
+</html>
