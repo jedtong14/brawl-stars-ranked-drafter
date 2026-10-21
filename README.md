@@ -86,11 +86,19 @@ Every not-yet-taken brawler gets a raw score from additive rules. The SCORE card
 - Serve `public/` over HTTP (any static server) and open `http://127.0.0.1:<port>/index.html` — CDN assets (Tailwind, FontAwesome, fonts, portraits) need network.
 - Node is not required for the app; a portable Node lives at `C:\Users\michael.tong\AppData\Local\Programs\nodejs\node-v22.12.0-win-x64\` for maintenance scripts (npm/wrangler).
 
-## 6. Deploy (Cloudflare free tier)
+## 6. Deploy
+
+### Option A — GitHub Pages (no build, auto on every push)
+- `.github/workflows/deploy-pages.yml` publishes the `public/` folder on every push to `main`.
+- One-time setup: repo **Settings → Pages → Source = "GitHub Actions"**.
+- Live URL: `https://jedtong14.github.io/brawl-stars-ranked-drafter/`.
+
+### Option B — Cloudflare Workers (free tier)
 
 - `wrangler.jsonc` is a Workers **assets-only** config (no worker script, no build): `{ name: 'brawl-stars-ranked-drafter', assets: { directory: './public' } }`.
 - Auth: `npx wrangler login` (browser OAuth) → check with `npx wrangler whoami` → deploy with `npx wrangler deploy` (first deploy creates the workers.dev URL).
 - Keep the asset dir pointing at `public/` — don't deploy the repo root.
+- Either host works independently, or both (same `public/` content).
 
 ## 7. Repo layout
 
