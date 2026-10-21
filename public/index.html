@@ -1100,14 +1100,15 @@
             if (!top.length) {
                 list.innerHTML = `<div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs text-amber-300 font-semibold">❓ No strong data pick yet — scores update live as picks lock. Default: solid Control/Sniper for the mode (see grid).</div>`;
             } else {
-                // Descending score display (Prodigy-style): best pick normalized to 99, bars sized proportionally. Tap a row to lock the pick.
-                const best = top[0].score;
+                // Descending score display (Prodigy-style ABSOLUTE scores): anchored to a 140 engine-score scale so the
+                // numbers themselves move when picks/enemy/map change (Prodigy's 82/78/74 vibe), instead of pinning the best at 99.
+                const cap = Math.max(140, top[0].score + 6);
                 list.innerHTML = top.map((rec, i) => {
                     const b = rec.brawler;
                     const mm = CLASS_META[b.cls];
                     const traits = (b.traits || []).map(t =>
                         `<span class="text-[8px] font-bold px-1 rounded" style="color:${TRAIT_META[t].hex}">${TRAIT_META[t].label}</span>`).join(' ');
-                    const disp = Math.max(3, Math.min(99, Math.round(99 * rec.score / best)));
+                    const disp = Math.max(3, Math.min(99, Math.round(99 * rec.score / cap)));
                     const warnHTML = rec.warns.length
                         ? `<div class="text-[9px] text-red-400 font-semibold mt-0.5 truncate">⚠️ ${rec.warns.slice(0, 2).join(' • ')}</div>` : '';
                     return `
