@@ -107,7 +107,7 @@
 
             <div class="flex items-center justify-between gap-2 mt-2.5 mb-1.5">
                 <button id="targetBan" onclick="setTarget('ban')" class="target-btn touch-btn text-[9px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider bg-slate-800 text-slate-400 border-slate-700">Ban</button>
-                <span class="text-[9px] text-slate-500 italic text-right">Engine estimate — counter pairs, class geometry, mode &amp; map weighting.</span>
+                <span id="laneHint" class="text-[9px] text-slate-500 italic text-right">Engine estimate — counter pairs, class geometry, mode &amp; map weighting.</span>
             </div>
             <div class="grid grid-cols-3 gap-2" id="vsLanes"></div>
             <details class="mt-2">
@@ -132,6 +132,7 @@
 
                 <!-- DRAFT INTEL -->
                 <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shadow-lg space-y-2">
+            <div id="mapTip" class="text-[10px] text-amber-200 bg-slate-950/70 border border-amber-400/20 rounded-xl px-2 py-1.5 font-semibold"></div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <div class="text-[9px] font-bold text-green-400 uppercase tracking-wider mb-1"><i class="fa-solid fa-hand-fist"></i> In Your Hand</div>
@@ -218,21 +219,57 @@
 
         // Map geometry: OPEN = long sightlines (range up, wall-picks down); CLOSED = wall-heavy (dive/throwers up);
         // BUSHY = ambush maps. edge = classic map-specific strength picks. Geometry drives scoring, edges add a map bonus.
+        // v2 per-map layer: bias = class-level point swings SO THE SAME MODE PICKS DIFFERENTLY ON EACH MAP,
+        // tip = one-line map strategy shown in DRAFT INTEL.
         const MAP_META = {
-            'Backyard Bowl':  { geo: 'MIXED',  edge: ['tara', 'gene', 'sprout'] },
-            'Sneaky Fields':  { geo: 'CLOSED', edge: ['sandy', 'emz', 'buzz'] },
-            'Super Beach':    { geo: 'OPEN',   edge: ['piper', 'belle', 'angelo'] },
-            'Last Stop':      { geo: 'MIXED',  edge: ['carl', 'tick', 'moe'] },
-            'Hard Rock Mine': { geo: 'CLOSED', edge: ['moe', 'rico', 'buster'] },
-            'Dueling Beetles':{ geo: 'MIXED',  edge: ['emz', 'tara', 'sprout'] },
-            'Ring of Fire':   { geo: 'CLOSED', edge: ['mortis', 'kenji', 'emz'] },
-            'Parallel Place': { geo: 'OPEN',   edge: ['angelo', 'piper', 'rt'] },
-            'Safe Zone':      { geo: 'CLOSED', edge: ['tick', 'berry', 'barley'] },
-            'Hot Potato':     { geo: 'OPEN',   edge: ['piper', 'colt', 'pierce'] },
-            'Shooting Star':  { geo: 'OPEN',   edge: ['gray', 'nani', 'belle'] },
-            'Goldarm Gulch':  { geo: 'CLOSED', edge: ['bull', 'shade', 'cordelius'] },
-            'Hideout':        { geo: 'BUSHY',  edge: ['rosa', 'bull', 'buzz'] },
-            'Layer Cake':     { geo: 'MIXED',  edge: ['tara', 'tick', 'emz'] }
+            // ===== BRAWL BALL =====
+            'Backyard Bowl':  { geo: 'MIXED',  edge: ['tara', 'gene', 'sprout'],
+                bias: { 'CONTROL': 8, 'ANTI_TANK': 6, 'TANK': -4, 'SNIPER': 4 },
+                tip: 'Long mid lanes with center walls — control stakes the middle, anti-tanks punish anyone overextending past it.' },
+            'Sneaky Fields':  { geo: 'CLOSED', edge: ['sandy', 'emz', 'buzz'],
+                bias: { 'SPACE_MAKER': 12, 'CONTROL': 6, 'THROWER': 6, 'SNIPER': -8 },
+                tip: 'Bushy center + wall clusters — dive and sneak-pick through bushes; players who sit at range get jumped.' },
+            'Super Beach':    { geo: 'OPEN',   edge: ['piper', 'belle', 'angelo'],
+                bias: { 'SNIPER': 16, 'ANTI_TANK': 6, 'THROWER': -10, 'TANK': -8 },
+                tip: 'Wide-open beach — range controls the whole field; wall-reliant picks have almost nothing to hide behind.' },
+            // ===== GEM GRAB =====
+            'Last Stop':      { geo: 'MIXED',  edge: ['carl', 'tick', 'moe'],
+                bias: { 'THROWER': 8, 'CONTROL': 8, 'SNIPER': 6, 'TANK': -6 },
+                tip: 'Long center lane over the gem mine — wall-spanning damage and hypercharge mobility own mid; slow tanks bleed crossing it.' },
+            'Hard Rock Mine': { geo: 'CLOSED', edge: ['moe', 'rico', 'buster'],
+                bias: { 'SPACE_MAKER': 12, 'TANK': 10, 'SNIPER': -10, 'THROWER': 6 },
+                tip: 'Tight mine corridors — close-range damage and wall dives thrive; long sightlines barely exist, pure snipers starve.' },
+            // ===== HOT ZONE =====
+            'Dueling Beetles':{ geo: 'MIXED',  edge: ['emz', 'tara', 'sprout'],
+                bias: { 'CONTROL': 14, 'THROWER': 6, 'ANTI_TANK': 6 },
+                tip: 'Zone sits between wall clusters — area denial wins; whoever zones the ring without dying stacks the zone %.' },
+            'Ring of Fire':   { geo: 'CLOSED', edge: ['mortis', 'kenji', 'emz'],
+                bias: { 'SPACE_MAKER': 12, 'ANTI_TANK': 10, 'SNIPER': -10 },
+                tip: 'Ring ringed by walls — dive circles the edge and breaks in; snipers starve inside the corridors.' },
+            'Parallel Place': { geo: 'OPEN',   edge: ['angelo', 'piper', 'rt'],
+                bias: { 'SNIPER': 14, 'CONTROL': 6, 'THROWER': -4 },
+                tip: 'Open lanes to the zone — whoever controls range controls zone entry; dive has to cross no-man\u2019s land to contest.' },
+            // ===== HEIST =====
+            'Safe Zone':      { geo: 'CLOSED', edge: ['tick', 'berry', 'barley'],
+                bias: { 'THROWER': 16, 'TANK': 8, 'SNIPER': -10 },
+                tip: 'Wall maze around both safes — lobbed damage burns the safe for free; melee has to grind through walls first.' },
+            'Hot Potato':     { geo: 'OPEN',   edge: ['piper', 'colt', 'pierce'],
+                bias: { 'SNIPER': 16, 'ANTI_TANK': 8, 'THROWER': -8 },
+                tip: 'Straight sightlines to the safes — range wins the damage race; throwers eat punishes until walls are gone.' },
+            // ===== KNOCKOUT =====
+            'Shooting Star':  { geo: 'OPEN',   edge: ['gray', 'nani', 'belle'],
+                bias: { 'SNIPER': 14, 'CONTROL': 6, 'TANK': -10, 'THROWER': -8 },
+                tip: 'Long sightlines, no respawns — range wins the pick wars; one lost exchange hands the enemy the star.' },
+            'Goldarm Gulch':  { geo: 'CLOSED', edge: ['bull', 'shade', 'cordelius'],
+                bias: { 'SPACE_MAKER': 14, 'ANTI_TANK': 8, 'SNIPER': -10 },
+                tip: 'Bush corridors and walls — ambush and own the flanks; anyone holding still in the open gets flanked.' },
+            // ===== BOUNTY =====
+            'Hideout':        { geo: 'BUSHY',  edge: ['rosa', 'bull', 'buzz'],
+                bias: { 'SPACE_MAKER': 14, 'TANK': 8, 'SNIPER': -8, 'THROWER': 6 },
+                tip: 'Deep center bushes — first contact usually wins a star; aggro picks that own the bushes dictate the whole map.' },
+            'Layer Cake':     { geo: 'MIXED',  edge: ['tara', 'tick', 'emz'],
+                bias: { 'CONTROL': 10, 'THROWER': 10, 'TANK': -6 },
+                tip: 'Symmetric wall maze — zone the center choke and starve their approach; throwers lob over every layer.' }
         };
 
         // DATA SCHEMA
@@ -819,6 +856,20 @@
             return { pct: Math.max(28, Math.min(74, Math.round(pct))), why: why.join(' • ') };
         }
 
+        // Lane optimizer: find the pairing of your 3 picks vs their 3 picks with the best total matchup,
+        // slight tilt that puts the strongest lane on MID. Returns per-lane rows ready to render.
+        function bestLaneAssignment(y, e, g) {
+            const perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+            let best = null;
+            perms.forEach(py => perms.forEach(pe => {
+                const pcts = [0, 1, 2].map(l => laneMatchup(y[py[l]], e[pe[l]], g).pct);
+                const sum = pcts[0] + pcts[1] + pcts[2];
+                const score = sum + (pcts[1] - 50) * 0.25; // tilt: strongest lane tends to MID
+                if (!best || score > best.score) best = { py, pe, pcts, sum, score };
+            }));
+            return best;
+        }
+
         function renderVsBoard() {
             const g = GAMEMODES.find(m => m.id === state.mode);
             const y = state.yourPicks.map(byId);
@@ -845,8 +896,22 @@
                 return `<div class="w-10 h-10 rounded-lg ${tone === 'you' ? 'bg-blue-900/40 border border-blue-500/40' : 'bg-red-900/40 border border-red-500/40'} flex items-center justify-center text-slate-600 text-[9px] font-brawl">TBD</div>`;
             };
             const chip = ['bg-blue-500/25 text-blue-200 border-blue-400/50', 'bg-amber-500/25 text-amber-200 border-amber-400/50', 'bg-violet-500/25 text-violet-200 border-violet-400/50'];
-            document.getElementById('vsLanes').innerHTML = lanes.map((L, li) => {
-                const yy = y[L.i], ee = e[L.i];
+            // Lane rows: slot order while drafting; once all 6 lock, the engine re-arranges to the BEST
+            // possible lane assignment (not locked to pick order — strongest matchup tends to MID).
+            let optimized = false, rowIndex = null;
+            if (y.every(Boolean) && e.every(Boolean)) {
+                rowIndex = bestLaneAssignment(y, e, g);
+                optimized = true;
+            }
+            const laneHintEl = document.getElementById('laneHint');
+            if (laneHintEl) laneHintEl.textContent = optimized
+                ? '⚡ Lanes auto-arranged for your best possible matchups — strongest lane on MID.'
+                : 'Engine estimate — counter pairs, class geometry, mode & map weighting.';
+            const rows = [0, 1, 2].map(l => optimized
+                ? { label: lanes[l].label, y: y[rowIndex.py[l]], e: e[rowIndex.pe[l]] }
+                : { label: lanes[l].label, y: y[l], e: e[l] });
+            document.getElementById('vsLanes').innerHTML = rows.map((R, li) => {
+                const yy = R.y, ee = R.e;
                 const decided = !!(yy && ee);
                 const best = (!yy && ee) ? bestFor(ee) : null;
                 const m = laneMatchup(yy, ee, g);
@@ -855,7 +920,7 @@
                 const badgeText = tone === 'good' ? 'text-green-300' : tone === 'bad' ? 'text-red-300' : tone === 'mid' ? 'text-amber-200' : 'text-slate-500';
                 const names = decided ? `${yy.name} vs ${ee.name}` : (ee ? `vs ${ee.name}` : (yy ? yy.name : 'open lane'));
                 return `<div class="bg-slate-950/70 rounded-xl p-2 flex flex-col items-center gap-1.5" title="${((decided ? m.why : '') || (best && best.why) || '').replace(/"/g, '&quot;')}">
-                    <span class="self-start text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${chip[li]}">${L.label}</span>
+                    <span class="self-start text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${chip[li]}">${R.label}</span>
                     ${best && !yy ? `<div class="relative" title="Suggested: ${best.b.name}${best.why ? ' — ' + best.why : ''}">${best.b ? mini(best.b) : ''}</div>` : mini(yy, 'you')}
                     <div class="w-14 h-14 rounded-full border-2 ${badgeBorder} flex flex-col items-center justify-center leading-none">
                         <span class="font-brawl text-[13px] ${badgeText}">${decided ? m.pct + '%' : (best ? '★' : '—')}</span>
@@ -872,9 +937,9 @@
                 oddsEl.className = 'font-brawl text-sm px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap bg-slate-800/90 text-slate-300 border border-slate-600';
                 return;
             }
-            const decidedLanes = lanes.filter(L => y[L.i] && e[L.i]);
-            const odds = Math.round(decidedLanes.reduce((s, L) => s + laneMatchup(y[L.i], e[L.i], g).pct, 0) / decidedLanes.length);
-            oddsEl.textContent = `Odds of winning: ${odds}%`;
+            const decidedLanes = rows.filter(R => R.y && R.e);
+            const odds = Math.round(decidedLanes.reduce((s, R) => s + laneMatchup(R.y, R.e, g).pct, 0) / decidedLanes.length);
+            oddsEl.textContent = `Odds of winning: ${odds}%${optimized ? ' ⚡' : ''}`;
             oddsEl.className = 'font-brawl text-sm px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap bg-amber-400 text-slate-950 border border-amber-300';
         }
 
@@ -927,7 +992,15 @@
             renderVsBoard();
             renderBanSlots();
             renderBans();
+            renderMapTip();
             updateAdvice();
+        }
+
+        function renderMapTip() {
+            const el = document.getElementById('mapTip');
+            if (!el) return;
+            const mm = MAP_META[state.map] || {};
+            el.textContent = `🗺️ ${state.map}: ${mm.tip || 'No map intel — solid mode default applies.'}`;
         }
 
         function classCounts(list) {
@@ -1009,6 +1082,32 @@
                     }
                 }
 
+                // Mode-specific fine-tuning (goes beyond the AGGRO/PASSIVE band logic — different objectives per mode)
+                switch (state.mode) {
+                    case 'gg':
+                        if (b.cls === 'CONTROL') add(8, 'Gem Grab: mid control protects the gem mine');
+                        if ((b.traits || []).includes('KB')) add(6, 'Gem Grab: knockback rips gems out of the mine fight');
+                        break;
+                    case 'hz':
+                        if (b.cls === 'CONTROL') add(8, 'Hot Zone: area denial stacks the zone');
+                        if (b.cls === 'TANK') add(6, 'Hot Zone: bodies on the zone win');
+                        break;
+                    case 'heist':
+                        if (b.cls === 'TANK') add(8, 'Heist: raw HP melted the safe in the damage race');
+                        break;
+                    case 'bb':
+                        if ((b.traits || []).includes('WALLBREAK')) add(6, 'Brawl Ball: opening the center walls opens the goal path');
+                        break;
+                    case 'ko':
+                        if (b.cls === 'SNIPER') add(6, 'Knockout: no respawns — range wins the exchanges');
+                        if (b.cls === 'SUPPORT') bad(-8, 'Knockout: no respawns — sustain value halves');
+                        break;
+                    case 'bounty':
+                        if (b.cls === 'SUPPORT') add(4, 'Bounty: keeping teammates alive protects the star lead');
+                        if (b.cls === 'THROWER') add(6, 'Bounty: lobbed zones steal the star fight from behind walls');
+                        break;
+                }
+
                 // Mode affinity
                 const modes = b.modes || CLASS_MODES[b.cls];
                 if (modes.includes(g.id)) add(20, null); else { score -= 12; }
@@ -1023,6 +1122,11 @@
                     if (b.cls === 'SNIPER' && b.sub === 'PURE') bad(-10, 'Closed map starves pure snipers');
                 }
                 if (mapm.edge.includes(b.id)) add(20, `Classic strength on ${state.map}`);
+
+                // Per-map class bias — the SAME mode scores differently on each specific map (v2 map layer)
+                const mapBias = (mapm.bias || {})[b.cls] || 0;
+                if (mapBias > 0) add(mapBias, Math.abs(mapBias) >= 10 ? `Map fit: built for ${state.map}` : null);
+                else if (mapBias < 0) bad(mapBias, Math.abs(mapBias) >= 10 ? `${state.map} starves this class` : null);
 
                 // Part 2: current-meta top picks get a flat push
                 if (META5.has(b.id)) add(25, 'Current meta: top-5 pick in its class');

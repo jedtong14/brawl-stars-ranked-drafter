@@ -15,7 +15,7 @@ A single-file, no-build ranked-draft assistant for Brawl Stars, inspired by PL P
 | 2 | In the **DRAFT BOARD** card, tap **Pick Blue** / **Pick Red** / **Ban**, then tap brawlers in the selection grid to fill the slots |
 | 3 | Tap a filled portrait to select that slot (next pick replaces it); tap its `×` badge to clear |
 | 4 | Watch the **SCORE** card (left column) — top-6 recommendations update live after every pick, ban, map or mode change. Tap a row to lock that brawler |
-| 5 | The **DRAFT BOARD** lanes show per-lane matchup % + a ★ suggested counter when your lane slot is empty against a locked enemy; the amber **Odds of winning** pill appears when all 6 picks are locked |
+| 5 | The **DRAFT BOARD** lanes show per-lane matchup % + a ★ suggested counter when your lane slot is empty against a locked enemy; once all 6 are locked, lanes **auto-rearrange to your best possible matchups** (strongest on MID, ⚡ shown); the amber **Odds of winning** pill appears when all 6 picks are locked |
 | 6 | Recommended bans (grey) live inside the DRAFT BOARD under "Recommended bans ▾" |
 | 7 | `RESET` clears the draft |
 
@@ -37,6 +37,8 @@ Every not-yet-taken brawler gets a raw score from additive rules. The SCORE card
 | Meta5 | +25 for current-meta top picks |
 | Buffie upgrades 🧪 | +5 per-brawler Gadget/Star-Power/Hypercharge upgrade bonus |
 | Map geometry | OPEN: snipers +14, throwers/tanks −12 · CLOSED/BUSHY: space makers +10, throwers +8, pure snipers −10 |
+| **Per-map class bias** | every map carries its own class swings (`MAP_META.bias`, ±4 to ±16) — so the **same mode recommends differently on each specific map** (e.g. Super Beach pushes range, Sneaky Fields pushes dive/ambush) |
+| Mode objectives | mode-specific rules beyond AGGRO/PASSIVE: Gem Grab mid-control +8 / knockback +6, Hot Zone area denial +8 & bodies +6, Heist tank HP +8, Brawl Ball wall-break +6, Knockout range +6 / sustain −8, Bounty thrower zones +6 |
 | Map edge list | +20 for classic per-map strengths |
 | Counter pairs | +18 for each locked enemy the brawler counters (mode-keyed counters count too, e.g. Chuck on Heist) |
 | Being countered | −22 per locked enemy that counters the brawler |
@@ -65,6 +67,7 @@ Every not-yet-taken brawler gets a raw score from additive rules. The SCORE card
   - Opponent picks first → ban their best first-pick brawlers: meta anti-tanks/divers in aggressive modes, meta control/utility mainstays in passive modes.
   - We pick first → **never** ban meta anti-tanks (it hands them the best pick); ban 2/3-pivot threats and last-pick cheese (throwers, Shade) instead.
 - **Lane matchups** (`laneMatchup`): per-lane % from counter pairs, class geometry, mode affinity and map geo; badge green ≥56%, amber 45–55%, red ≤44%. The ★ suggestion picks the best available counter for an empty lane facing a locked enemy.
+- **Lane optimizer** (`bestLaneAssignment`): lanes are **not locked to pick order** — once all 6 brawlers are locked, the engine tests every pairing (36 permutations), maximizes your total matchup %, and tilts the strongest lane onto MID (powered-by ⚡ hint + odds recalculated on the optimal assignment).
 - **Odds of winning** = average of the three lane matchups, shown in the amber pill once all 6 picks lock.
 - Banned brawlers are excluded from every pool (recommendations, ban guide, selection grid, lanes).
 
